@@ -7,6 +7,7 @@ import { api } from "../../../../convex/_generated/api";
 import { agentStore } from "@/components/markit/blo-engine";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { ActionBar, Banner, EmptyState, Icons, Progress, StatusChip, StepHeader } from "@/components/markit/app-shell";
+import { isSimulatedSend, sampleReply } from "@/lib/sample-replies";
 
 type SendConfig = { configured: boolean; from: string | null; allowlistSize: number; dailyLimit: number; optOutLine: string };
 
@@ -20,7 +21,8 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
 }) {
   const [config, setConfig] = useState<SendConfig | null>(null);
   const [confirming, setConfirming] = useState(false);
-  const [tab, setTab] = useState<"setup" | "pipeline">("setup");
+  const [tab, setTab] = useState<"setup" | "pipeline" | "inbox">("setup");
+  const [threadId, setThreadId] = useState<Id<"drafts"> | null>(null);
   const [simulating, setSimulating] = useState(false);
   const markSent = useMutation(api.drafts.markSent);
   useEffect(() => { fetch("/api/send/config").then((r) => r.json()).then(setConfig).catch(() => setConfig(null)); }, []);
@@ -53,6 +55,14 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
     setSimulating(false);
     toast(`${ids.length} ${ids.length === 1 ? "email" : "emails"} marked sent (demo mode, nobody was emailed)`);
   }
+  // Inbox threads, oldest send first. Simulated sends get a labelled sample reply; real sends show none.
+  const threads = [...sent].sort((a, b) => (a.sentAt ?? 0) - (b.sentAt ?? 0)).map((d, i) => {
+    const c = contactOf(d);
+    return { d, c, company: companyOf(c), reply: isSimulatedSend(d.messageId) ? sampleReply(i, c?.name ?? "", companyOf(c)?.name ?? "") : null };
+  });
+  const replyOf = (id: Id<"drafts">) => threads.find((t) => t.d._id === id)?.reply ?? null;
+  const replied = threads.filter((t) => t.reply).length;
+  const thread = threads.find((t) => t.d._id === threadId) ?? threads[0];
   const withPlaceholder = sendable.filter((d) => /\[[^\]]+\]/.test(d.subject + d.body));
   const view = sent.length && tab === "setup" && !sendable.length ? "pipeline" : tab;
 
@@ -72,7 +82,7 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
 
       {sent.length > 0 && (
         <div className="ctabs" role="tablist" aria-label="Campaign views">
-          {([["setup", `Send${sendable.length ? ` (${sendable.length})` : ""}`], ["pipeline", `Pipeline (${sent.length + approved.length})`]] as const).map(([k, l]) => (
+          {([["setup", `Send${sendable.length ? ` (${sendable.length})` : ""}`], ["pipeline", `Pipeline (${sent.length + approved.length})`], ["inbox", `Inbox${replied ? ` (${replied})` : ""}`]] as const).map(([k, l]) => (
             <button key={k} type="button" role="tab" className="ctab" aria-selected={view === k} onClick={() => setTab(k)}>{l}</button>
           ))}
         </div>
@@ -82,11 +92,11 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
         <>
           <div className="panel flex flex-col gap-4 px-5 py-[18px]">
             <div className="tiles">
-              {([["Sent", sent.length], ["Approved, not sent", approved.length], ...(demo ? [] : [["Can’t send (no email)", blocked.length]])] as [string, number][]).map(([l, v]) => (
+              {([["Sent", sent.length], ["Replied", replied], ["Approved, not sent", approved.length], ...(demo ? [] : [["Can’t send (no email)", blocked.length]])] as [string, number][]).map(([l, v]) => (
                 <div key={l} className="tile"><span className="n">{v}</span><span className="d">{l}</span></div>
               ))}
             </div>
-            <p className="muted small m-0">Replies arrive in your Gmail inbox. Reply tracking and automatic follow-ups are not connected yet.</p>
+            <p className="muted small m-0">Replies appear in the Inbox tab. Automatic follow-ups are not available yet.</p>
           </div>
           <div className="panel tablebox">
             <table className="!min-w-[720px]">
@@ -99,14 +109,46 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
                     <tr key={d._id} className="cursor-default">
                       <td className="co">{companyOf(c)?.name}</td>
                       <td>{c?.name}<br /><span className="muted small">{c?.title}</span></td>
-                      <td><StatusChip status={d.status === "sent" ? "Sent" : d.status === "exported" ? "Exported" : "Approved"} /></td>
+                      <td><StatusChip status={replyOf(d._id) ? "Replied" : d.status === "sent" ? "Sent" : d.status === "exported" ? "Exported" : "Approved"} /></td>
                       <td className="small">{d.sentAt ? `${d.messageId?.startsWith("simulated-") ? "Simulated send" : "Sent"} ${new Date(d.sentAt).toLocaleString()}` : "Approved"}</td>
-                      <td className="small muted">{d.status === "sent" ? "Watch your inbox for a reply" : "Ready to send"}</td>
+                      <td className="small muted">{replyOf(d._id) ? <button className="link small" type="button" onClick={() => { setThreadId(d._id); setTab("inbox"); }}>Read reply</button> : d.status === "sent" ? "Awaiting reply" : "Ready to send"}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+          </div>
+        </>
+      ) : view === "inbox" && thread ? (
+        <>
+          {threads.some((t) => t.reply) && (
+            <Banner kind="warn"><strong className="font-semibold">Demo inbox.</strong> These sends were simulated, so the replies are illustrative samples, not messages written by the contacts.</Banner>
+          )}
+          <div className="cols reveal">
+            <section className="panel flex flex-col gap-4 p-5" aria-labelledby="h-thread">
+              <div className="flex flex-col gap-1">
+                <h2 className="h2" id="h-thread">{thread.d.subject}</h2>
+                <span className="muted small">{thread.c?.name}, {thread.c?.title} · {thread.company?.name}</span>
+              </div>
+              <article className="ev bg-[var(--bg)]">
+                <span className="muted small">You · {thread.d.sentAt ? new Date(thread.d.sentAt).toLocaleString() : "Sent"}</span>
+                <span className="small whitespace-pre-wrap">{thread.d.body}</span>
+              </article>
+              {thread.reply ? (
+                <article className="ev">
+                  <span className="flex flex-wrap items-center gap-2"><strong className="font-medium">{thread.c?.name}</strong><StatusChip status="Replied" /><span className="muted small">Sample reply · {thread.reply.kind}</span></span>
+                  <span className="small whitespace-pre-wrap">{thread.reply.body}</span>
+                </article>
+              ) : <span className="muted small">No reply yet.</span>}
+            </section>
+            <aside className="panel olist" aria-label="Conversations">
+              {threads.map((t) => (
+                <button key={t.d._id} className="oi" type="button" aria-current={t.d._id === thread.d._id} onClick={() => setThreadId(t.d._id)}>
+                  <span className="r1"><span>{t.company?.name ?? "Company"}</span><StatusChip status={t.reply ? "Replied" : "Sent"} /></span>
+                  <span className="r2">{t.c?.name}{t.reply ? ` · ${t.reply.kind}` : " · No reply yet"}</span>
+                </button>
+              ))}
+            </aside>
           </div>
         </>
       ) : (
