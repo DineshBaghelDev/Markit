@@ -19,4 +19,4 @@ Exact screens, search criteria, scoring, API access, and demo dataset are not ye
 
 ## Current handoff
 
-Repository rules and documentation structure are initialized. Application code and integrations have not been scaffolded. See [progress](../docs/progress.md) for next steps and [decisions](../docs/decisions.md) for rationale.
+The application foundation is installed at the repository root. Local Convex is configured and its health query returned ok; the supplied cloud project rejected the current account. OpenAI and Crustdata server clients are present; AI requests still need an OpenAI key and model. Start both services with npm run dev:all. See [setup](../docs/setup.md), [progress](../docs/progress.md), and [decisions](../docs/decisions.md).

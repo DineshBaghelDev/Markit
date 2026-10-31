@@ -10,6 +10,7 @@ out/
 coverage/
 *.tsbuildinfo
 .vercel/
+.convex/
 
 # Local logs
 *.log

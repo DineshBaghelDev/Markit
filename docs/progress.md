@@ -9,22 +9,23 @@ Updated: 2026-10-31
 - Created context/, audit/, and docs/ with decision and progress trackers.
 - Linked the documentation from the root README.
 - Added ignore rules for credentials, dependencies, build output, and logs.
+- Installed and configured the application, integration clients, shadcn components, and local Convex backend at the repository root.
+- Passed lint, application/backend type checks, all eight tests, production build, and HTTP health checks.
 
 ## Current state
 
-Repository conventions are ready. No application scaffolding or dependencies have been added.
+Application setup is implemented at the repository root: Next.js, TypeScript, Tailwind, shadcn/UI, Convex, OpenAI SDK, Crustdata client, Zod, and Vitest. A local Convex deployment is configured and verified. The production build and all eight validation/environment tests passed.
 
 ## Planned
 
-- Scaffold the application with the selected stack.
 - Implement a focused market-to-leads-to-outreach demo flow.
-- Connect Crustdata, OpenAI, and Convex as needed for that flow.
+- Add campaign operations and wire real Crustdata/OpenAI requests into that flow.
 - Verify the demo and deploy to Vercel.
 
 ## Blockers and open details
 
-No blocker for documentation setup. Product details and integration credentials remain to be established during implementation.
+The supplied Convex cloud project rejected the current account; use local Convex until an authorized account/deploy key is available. OpenAI requests need an API key and model. The setup does not yet implement the full product workflow.
 
 ## Next action
 
-Define the smallest demo interaction and scaffold the application.
+Implement the first campaign-to-company discovery interaction on the installed foundation.
