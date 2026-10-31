@@ -23,7 +23,7 @@ Updated: 2026-10-31
 ## Known limitations
 
 - No auth: Convex functions and API routes are public.
-- Live discovery takes about 4 minutes; Autopilot may exceed the 300 s Vercel function limit on a live run.
+- Live discovery takes about 4 minutes, now in the background with progressive scoring. A single stage that exceeds 300 s on Vercel is flagged as stopped after 6 minutes rather than finishing.
 - The daily send cap is per project, not per sender.
 - The strategy model sometimes leaves company size empty; set it in the ICP editor before approval.
 

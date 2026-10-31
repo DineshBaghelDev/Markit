@@ -89,7 +89,7 @@ audit/                 Verification evidence and limitations
 4. **Outreach**: one draft per included contact with cited fields. Edit, regenerate, approve, copy, or export CSV.
 5. **Campaign**: send approved emails from Gmail to allowlisted addresses only, with an opt-out line, a daily cap and no duplicate sends.
 
-Autopilot mode runs steps 2-4 unattended and stops at drafts for human approval.
+Autopilot mode runs steps 2-4 unattended in background stages (strategy, then discovery, then people and drafts, each with its own function time budget) and stops at drafts for human approval.
 
 ## Known limitations
 
@@ -97,6 +97,6 @@ Autopilot mode runs steps 2-4 unattended and stops at drafts for human approval.
 - Work-email enrichment returns 403 on the current Crustdata plan, so most contacts have no email. Use "Add person manually" (e.g. your own address) to demonstrate sending.
 - The daily send cap is counted per project, not per sender.
 - Reply tracking, follow-ups and booked calls are not built.
-- A live discovery run takes about 4 minutes; Autopilot runs in a background task that can exceed the 300 s function limit on Vercel. The recorded example replays in seconds.
+- A live discovery run takes about 4 minutes. It runs in the background: companies appear as soon as the search returns, scores fill in batch by batch, and the user can leave the page. Each stage still has to finish within one 300 s Vercel function; a stage that dies is flagged after 6 minutes and can be restarted. The recorded example replays in seconds.
 
 See [setup notes](docs/setup.md), [decisions](docs/decisions.md), [progress](docs/progress.md), [audit](audit/README.md), and [agent instructions](AGENTS.md).
