@@ -21,6 +21,7 @@ export const upsert = mutation({
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db.query("drafts").withIndex("by_contactId", (q) => q.eq("contactId", args.contactId)).unique();
+    if (existing?.status === "sent") throw new Error("This email was already sent; it cannot be regenerated.");
     if (existing) await ctx.db.patch("drafts", existing._id, { ...args, status: "draft" });
     else await ctx.db.insert("drafts", { ...args, status: "draft" });
   },
@@ -46,4 +47,10 @@ export const setStatusMany = mutation({
   handler: async (ctx, { ids, status }) => {
     for (const id of ids) await ctx.db.patch("drafts", id, { status });
   },
+});
+
+// Set only after the email provider confirms delivery to the outgoing server.
+export const markSent = mutation({
+  args: { id: v.id("drafts"), messageId: v.string() },
+  handler: (ctx, { id, messageId }) => ctx.db.patch("drafts", id, { status: "sent", messageId, sentAt: Date.now() }),
 });

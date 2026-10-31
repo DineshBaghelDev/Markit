@@ -7,6 +7,7 @@ import { buildCompanyQueries, buildPeopleAtCompanyQuery, dedupeCompanies } from 
 import { businessProfileSchema, icpSchema, type ParsedBusinessInput } from "@/lib/schemas";
 import { getPath, scoreQualification } from "@/lib/scoring";
 import { generateDraft, generateStrategy, pickDecisionMakers, qualifyCompanies } from "@/lib/server/ai";
+import { DAILY_SEND_LIMIT, emailConfig, finalizeBody, isAllowedRecipient, sendEmail } from "@/lib/server/email";
 import {
   CrustdataError, companyAutocomplete, companySearch, enrichBusinessEmails, personSearch, type CrustdataCompany,
 } from "@/lib/server/crustdata";
@@ -259,4 +260,42 @@ export async function runAutopilot(id: ProjectId) {
     await setStatus(id, "error", log.join(" "));
     throw error;
   }
+}
+
+// Step 8: send approved drafts. Only allowlisted addresses receive mail; each draft is sent at most once;
+// status becomes "sent" only after Gmail accepts the message.
+export async function sendApprovedDrafts(id: ProjectId, draftIds?: string[]) {
+  const { profile } = await loadProject(id);
+  const { allowlist } = emailConfig();
+  const [drafts, contacts] = await Promise.all([
+    fetchQuery(api.drafts.listByProject, { projectId: id }),
+    fetchQuery(api.contacts.listByProject, { projectId: id }),
+  ]);
+  const sentToday = drafts.filter((d) => d.sentAt && Date.now() - d.sentAt < 86_400_000).length;
+  const candidates = drafts.filter((d) => (draftIds ? draftIds.includes(d._id) : true) && d.status !== "sent");
+
+  const results: { draftId: string; to?: string; outcome: "sent" | "skipped" | "failed"; reason?: string }[] = [];
+  let budget = DAILY_SEND_LIMIT - sentToday;
+  for (const draft of candidates) {
+    const contact = contacts.find((c) => c._id === draft.contactId);
+    const skip = (reason: string) => results.push({ draftId: draft._id, to: contact?.email, outcome: "skipped", reason });
+    if (draft.status !== "approved" && draft.status !== "exported") { skip("Not approved"); continue; }
+    if (!contact?.email) { skip("No email address"); continue; }
+    if (!isAllowedRecipient(contact.email, allowlist)) { skip("Recipient not on EMAIL_ALLOWLIST"); continue; }
+    if (budget <= 0) { skip(`Daily limit of ${DAILY_SEND_LIMIT} reached`); continue; }
+    try {
+      const messageId = await sendEmail({
+        to: contact.email,
+        subject: draft.subject,
+        body: finalizeBody(draft.body),
+        fromName: profile.companyName,
+      });
+      await fetchMutation(api.drafts.markSent, { id: draft._id, messageId });
+      budget--;
+      results.push({ draftId: draft._id, to: contact.email, outcome: "sent" });
+    } catch (error) {
+      results.push({ draftId: draft._id, to: contact.email, outcome: "failed", reason: errorText(error) });
+    }
+  }
+  return { sent: results.filter((r) => r.outcome === "sent").length, results };
 }

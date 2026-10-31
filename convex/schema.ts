@@ -2,7 +2,8 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 // Structured LLM/Crustdata payloads are validated with Zod in the Next.js routes before they are stored.
-export const source = v.union(v.literal("live"), v.literal("fixture"));
+// manual = a test contact added by the user (e.g. their own address for demo sends), never Crustdata data.
+export const source = v.union(v.literal("live"), v.literal("fixture"), v.literal("manual"));
 export const emailStatus = v.union(v.literal("unavailable"), v.literal("not_enriched"), v.literal("enriched"));
 export const draftStatus = v.union(v.literal("draft"), v.literal("approved"), v.literal("exported"), v.literal("sent"));
 
@@ -50,5 +51,7 @@ export default defineSchema({
     valueProposition: v.string(),
     citations: v.optional(v.array(v.object({ field: v.string(), statement: v.string(), value: v.string() }))),
     status: draftStatus,
+    sentAt: v.optional(v.number()),
+    messageId: v.optional(v.string()),
   }).index("by_projectId", ["projectId"]).index("by_contactId", ["contactId"]),
 });

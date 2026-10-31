@@ -189,7 +189,7 @@ Format:
 - subject: 3-7 words, specific to the company, no clickbait.
 - body: plain text, 70-120 words, 2-3 short paragraphs, then the call to action and a sign-off with the seller's
   company name. No "I hope this email finds you well".
-- cta: the single ask used in the body.
+- cta: the single ask used in the body. Never include links or calendar booking URLs in a first-touch email.
 - valueProposition: one sentence on the value for this specific company.
 - citations: for every factual statement about the company in the email, the dotted path of the company record field
   it comes from (e.g. "basic_info.description", "locations.headquarters") and the statement it supports.`;

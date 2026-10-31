@@ -48,3 +48,23 @@ export const setEmails = mutation({
     }
   },
 });
+
+// Test contact supplied by the user (their own email) at a real prospect company, for demo sends.
+export const addTestContact = mutation({
+  args: {
+    projectId: v.id("projects"),
+    companyId: v.id("companies"),
+    name: v.string(),
+    title: v.string(),
+    email: v.string(),
+  },
+  handler: (ctx, args) =>
+    ctx.db.insert("contacts", {
+      ...args,
+      crustdataPersonId: 0,
+      emailStatus: "enriched",
+      relevance: "Test contact added by the user to demonstrate sending; not Crustdata data.",
+      selected: true,
+      source: "manual",
+    }),
+});
