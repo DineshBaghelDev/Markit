@@ -13,6 +13,7 @@ import type * as contacts from "../contacts.js";
 import type * as drafts from "../drafts.js";
 import type * as health from "../health.js";
 import type * as projects from "../projects.js";
+import type * as rateLimits from "../rateLimits.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   drafts: typeof drafts;
   health: typeof health;
   projects: typeof projects;
+  rateLimits: typeof rateLimits;
 }>;
 
 /**
@@ -54,4 +56,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};
