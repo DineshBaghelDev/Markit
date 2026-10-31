@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 import { useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
-import { postForm } from "@/lib/post-json";
+import { postForm, postJson } from "@/lib/post-json";
 import {
   ActionBar, AppShell, ErrorNote, Progress, StepHeader, useAgentTask, type Step, type StepInfo,
 } from "@/components/markit/app-shell";
@@ -59,6 +59,21 @@ export default function NewProject() {
   const [open, setOpen] = useState(false);
   const [over, setOver] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  async function removeProject(id: string) {
+    setDeleting(id);
+    try {
+      await postJson("/api/projects/delete", { projectId: id });
+      toast("Project deleted");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Could not delete the project");
+    } finally {
+      setDeleting(null);
+      setConfirmDelete(null);
+    }
+  }
 
   function addFiles(list: FileList | null) {
     if (!list) return;
@@ -180,10 +195,19 @@ export default function NewProject() {
             {projects === undefined ? <p className="muted small">Loading projects…</p> : projects.length === 0 ? (
               <p className="muted small">No projects yet. Your first one appears here.</p>
             ) : projects.map((p) => (
-              <Link key={p._id} href={`/project/${p._id}`} className="flex items-center justify-between gap-3 border-b border-[var(--border)] py-2.5 text-sm no-underline last:border-b-0 hover:bg-[var(--bg)]">
-                <span><strong className="font-medium">{p.name ?? p.profile?.companyName ?? "Untitled"}</strong> <span className="muted small">{p.input?.geography}</span></span>
-                <span className={`status ${p.status === "error" ? "s-replied" : p.status.includes("done") || p.status === "prospects_ready" ? "s-approved" : "s-draft"}`}>{STATUS_TEXT[p.status] ?? p.status.replaceAll("_", " ")}</span>
-              </Link>
+              <div key={p._id} className="flex items-center gap-2 border-b border-[var(--border)] last:border-b-0">
+                <Link href={`/project/${p._id}`} className="flex flex-1 items-center justify-between gap-3 py-2.5 text-sm no-underline hover:bg-[var(--bg)]">
+                  <span><strong className="font-medium">{p.name ?? p.profile?.companyName ?? "Untitled"}</strong> <span className="muted small">{p.input?.geography}</span></span>
+                  <span className={`status ${p.status === "error" ? "s-replied" : p.status.includes("done") || p.status === "prospects_ready" ? "s-approved" : "s-draft"}`}>{STATUS_TEXT[p.status] ?? p.status.replaceAll("_", " ")}</span>
+                </Link>
+                {/* Two-step delete: the first click arms it, the second deletes. */}
+                <button className={`btn sm ${confirmDelete === p._id ? "" : "ghost"}`} type="button" disabled={deleting === p._id}
+                  aria-label={confirmDelete === p._id ? `Confirm deleting ${p.name ?? p.profile?.companyName ?? "project"}` : `Delete ${p.name ?? p.profile?.companyName ?? "project"}`}
+                  onBlur={() => setConfirmDelete(null)}
+                  onClick={() => (confirmDelete === p._id ? removeProject(p._id) : setConfirmDelete(p._id))}>
+                  {deleting === p._id ? "Deleting…" : confirmDelete === p._id ? "Confirm" : "Delete"}
+                </button>
+              </div>
             ))}
           </section>
 

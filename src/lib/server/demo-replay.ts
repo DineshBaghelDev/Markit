@@ -4,18 +4,18 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { api } from "../../../convex/_generated/api";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
 import type { ParsedBusinessInput } from "@/lib/schemas";
+import { DEMO_TEMPLATE_ID } from "@/lib/server/demo-template";
 import { draftTargets } from "@/lib/draft-targets";
 
 // Guided example: when the "Use example" input arrives unchanged, each step replays the matching result from a
 // completed template project stored in Convex (so it also works on Vercel), after a short pause that lets the
 // progress animation play. Any edited or new input runs the live pipeline.
-const TEMPLATE_ID = (process.env.DEMO_TEMPLATE_PROJECT_ID?.trim() || "jn76x1x28m1hgz9rtqw7tdg3xn8hasea") as Id<"projects">;
 
 export const demoPause = () => new Promise((resolve) => setTimeout(resolve, 2_500 + Math.random() * 1_000));
 
 export async function demoTemplateFor(input: ParsedBusinessInput) {
   if (input.documents.length) return null;
-  const template = await fetchQuery(api.projects.get, { id: TEMPLATE_ID }).catch(() => null);
+  const template = await fetchQuery(api.projects.get, { id: DEMO_TEMPLATE_ID }).catch(() => null);
   const t = template?.input as ParsedBusinessInput | undefined;
   if (!template || !t) return null;
   const same = (a?: string, b?: string) => (a ?? "").trim() === (b ?? "").trim();

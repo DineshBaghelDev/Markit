@@ -38,9 +38,9 @@ async function rateLimited(request: Request, bucket: Bucket) {
 }
 
 // Wrap a JSON route: rate-limit, validate the body, run the handler and return useful errors.
-export function jsonRoute<T>(schema: z.ZodType<T>, handler: (body: T) => Promise<unknown>, bucket: Bucket = "pipeline") {
+export function jsonRoute<T>(schema: z.ZodType<T>, handler: (body: T) => Promise<unknown>, bucket: Bucket | null = "pipeline") {
   return async (request: Request) => {
-    const limited = await rateLimited(request, bucket);
+    const limited = bucket && await rateLimited(request, bucket);
     if (limited) return limited;
     const parsed = schema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: z.prettifyError(parsed.error) }, { status: 400 });
