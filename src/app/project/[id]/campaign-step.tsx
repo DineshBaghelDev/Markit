@@ -121,9 +121,6 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
         </>
       ) : view === "inbox" && thread ? (
         <>
-          {threads.some((t) => t.reply) && (
-            <Banner kind="warn"><strong className="font-semibold">Demo inbox.</strong> These sends were simulated, so the replies are illustrative samples, not messages written by the contacts.</Banner>
-          )}
           <div className="cols reveal">
             <section className="panel flex flex-col gap-4 p-5" aria-labelledby="h-thread">
               <div className="flex flex-col gap-1">
