@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildCompanyQueries, dedupeCompanies, MIN_EMPLOYEES_FLOOR } from "./crustdata-filters";
-import { scoreQualification } from "./scoring";
+import { claimMatchesValue, scoreQualification } from "./scoring";
 
 describe("buildCompanyQueries", () => {
   it("uses semantic search per segment with shared geography and headcount bounds", () => {
@@ -68,5 +68,18 @@ describe("scoreQualification", () => {
     const scored = scoreQualification({ ...base, evidence: [{ field: "hiring.openings", claim: "Hiring" }] }, company);
     expect(scored.observedSignals).toBe(0);
     expect(scored.score).toBe(40 + 20 + 0);
+  });
+});
+
+describe("claimMatchesValue", () => {
+  it("accepts claims whose numbers match the cited value", () => {
+    expect(claimMatchesValue("Reported headcount is 21,177", 21177)).toBe(true);
+    expect(claimMatchesValue("About 21,000 employees", 21177)).toBe(true);
+    expect(claimMatchesValue("Operates logistics services", "Global logistics")).toBe(true);
+  });
+
+  it("rejects claims whose numbers are not in the cited value", () => {
+    expect(claimMatchesValue("Raised funding in 2024", "2025-02-12")).toBe(false);
+    expect(claimMatchesValue("Headcount of 500", 74)).toBe(false);
   });
 });

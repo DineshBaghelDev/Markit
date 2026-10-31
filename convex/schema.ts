@@ -48,6 +48,7 @@ export default defineSchema({
     body: v.string(),
     cta: v.string(),
     valueProposition: v.string(),
+    citations: v.optional(v.array(v.object({ field: v.string(), statement: v.string(), value: v.string() }))),
     status: draftStatus,
   }).index("by_projectId", ["projectId"]).index("by_contactId", ["contactId"]),
 });

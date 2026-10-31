@@ -2,11 +2,11 @@ import { z } from "zod";
 
 // User input for a new sales project.
 export const businessInputSchema = z.object({
-  companyName: z.string().trim().min(1).max(200),
+  companyName: z.string().trim().max(200).default(""),
   website: z.string().trim().max(300).default(""),
   product: z.string().trim().min(1, "Describe what you sell.").max(3_000),
   valueProposition: z.string().trim().max(2_000).default(""),
-  geography: z.string().trim().min(1, "Enter a target geography.").max(300),
+  geography: z.string().trim().max(300).default(""),
   objective: z.string().trim().max(1_000).default(""),
   proofPoints: z.string().trim().max(2_000).default(""),
 });
@@ -74,5 +74,9 @@ export const draftSchema = z.object({
   body: z.string(),
   cta: z.string(),
   valueProposition: z.string(),
+  citations: z.array(z.object({
+    field: z.string().describe("Dotted path in the supplied company record that a statement in the email relies on"),
+    statement: z.string().describe("The statement in the email that this field supports"),
+  })),
 });
 export type Draft = z.infer<typeof draftSchema>;

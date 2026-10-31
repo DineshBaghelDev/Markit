@@ -14,24 +14,47 @@ async function cachedRequest<T>(path: string, schema: z.ZodType<T>, body: unknow
   return { value: schema.parse(value), cached };
 }
 
-async function crustdataRequest<T>(path: string, schema: z.ZodType<T>, body?: unknown): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method: body === undefined ? "GET" : "POST",
-    headers: {
-      Authorization: `Bearer ${requireServerEnv("CRUSTDATA_API_KEY")}`,
-      "x-api-version": "2025-11-01",
-      "content-type": "application/json",
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(30_000),
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    const detail = (await response.text()).slice(0, 300);
-    throw new Error(`Crustdata ${path} failed (HTTP ${response.status}): ${detail}`);
+export class CrustdataError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
   }
-  return schema.parse(await response.json());
+}
+
+const RETRY_DELAYS_MS = [1_000, 3_000];
+const isRetryable = (status: number) => status === 429 || status >= 500;
+
+// Retries rate limits, server errors and network timeouts; other client errors fail immediately.
+async function crustdataRequest<T>(path: string, schema: z.ZodType<T>, body?: unknown): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    let response: Response;
+    try {
+      response = await fetch(`${BASE_URL}${path}`, {
+        method: body === undefined ? "GET" : "POST",
+        headers: {
+          Authorization: `Bearer ${requireServerEnv("CRUSTDATA_API_KEY")}`,
+          "x-api-version": "2025-11-01",
+          "content-type": "application/json",
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
+        cache: "no-store",
+      });
+    } catch (error) {
+      if (attempt < RETRY_DELAYS_MS.length) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+        continue;
+      }
+      throw new CrustdataError(`Crustdata ${path} unreachable: ${error instanceof Error ? error.message : error}`, 0);
+    }
+
+    if (response.ok) return schema.parse(await response.json());
+    if (isRetryable(response.status) && attempt < RETRY_DELAYS_MS.length) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+      continue;
+    }
+    const detail = (await response.text()).slice(0, 300);
+    throw new CrustdataError(`Crustdata ${path} failed (HTTP ${response.status}): ${detail}`, response.status);
+  }
 }
 
 // Free account endpoint for verifying the integration without consuming credits.

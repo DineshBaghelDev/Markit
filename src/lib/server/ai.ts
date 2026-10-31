@@ -62,6 +62,11 @@ const STRATEGY_SYSTEM = `You are Markit, a senior B2B go-to-market strategist. A
 Reason backwards from the offering: what exactly is sold, which businesses have a concrete reason to buy it,
 what observable signals suggest need, who owns the buying decision, and what would disqualify a prospect.
 
+The input may be structured fields or a single unstructured brief (e.g. "We make X and want customers in Y").
+Extract the company name, offering, value proposition, geography and objective from wherever they appear. If the
+company name is missing, use "the seller"; if the geography is missing, infer it from the brief or choose the most
+plausible market and say so in the reasoning.
+
 Produce three parts:
 
 1. profile: a faithful restatement of the seller (do not add capabilities they did not mention).
@@ -179,7 +184,9 @@ Format:
 - body: plain text, 70-120 words, 2-3 short paragraphs, then the call to action and a sign-off with the seller's
   company name. No "I hope this email finds you well".
 - cta: the single ask used in the body.
-- valueProposition: one sentence on the value for this specific company.`;
+- valueProposition: one sentence on the value for this specific company.
+- citations: for every factual statement about the company in the email, the dotted path of the company record field
+  it comes from (e.g. "basic_info.description", "locations.headquarters") and the statement it supports.`;
 
 export function generateDraft(context: {
   profile: BusinessProfile; icp: Icp; company: unknown; qualification: unknown; proofPoints: string;

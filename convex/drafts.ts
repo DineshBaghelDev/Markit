@@ -17,6 +17,7 @@ export const upsert = mutation({
     body: v.string(),
     cta: v.string(),
     valueProposition: v.string(),
+    citations: v.array(v.object({ field: v.string(), statement: v.string(), value: v.string() })),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db.query("drafts").withIndex("by_contactId", (q) => q.eq("contactId", args.contactId)).unique();
