@@ -55,7 +55,6 @@ export function OutreachStep({ companies, contacts, drafts, busy, error, onGoPro
   if (d.citations?.length) checks.push({ k: "ok", text: `${d.citations.length} ${d.citations.length === 1 ? "statement traces" : "statements trace"} to cited Crustdata fields.` });
   else checks.push({ k: "warn", text: "No statements were cited to the company record. Check the facts before approving." });
   if (placeholders.length) checks.push({ k: "warn", text: `Unfilled placeholder: ${placeholders.join(", ")}. Replace it before sending.` });
-  if (!contact?.email) checks.push({ k: "warn", text: `No work email for ${contact?.name ?? "this person"}. The export lists their profile link instead.` });
 
   async function exportCsv() {
     const approved = drafts.filter((x) => x.status === "approved" || x.status === "exported");
