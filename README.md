@@ -31,7 +31,7 @@ Use [.env.example](.env.example) as a reference and add only missing values to `
 - `CRUSTDATA_API_KEY`: server-only Crustdata key.
 - `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `EMAIL_ALLOWLIST`: optional Gmail sending. Mail goes only to allowlisted addresses. Without Gmail, the Campaign step runs in a labelled demo mode that simulates sending.
 - `DEMO_STEP_DELAY=on`: pads replayed steps to about 3 s so the progress animation is visible.
-- `DEMO_TEMPLATE_PROJECT_ID`: completed project that the "Use example" input replays (works without the local cache, e.g. on Vercel).
+- `DEMO_TEMPLATE_PROJECT_ID`: completed project that the "Use example" input replays (works without the local cache, e.g. on Vercel). Defaults to the template in the shared dev deployment; it cannot be deleted from the app.
 
 ### Demo LLM (codex-as-api)
 
@@ -93,7 +93,7 @@ Autopilot mode runs steps 2-4 unattended and stops at drafts for human approval.
 
 ## Known limitations
 
-- No authentication: Convex functions and API routes are public. Anyone with the URL can view, change or delete projects and spend LLM/Crustdata credits. Do not deploy with real customer data.
+- No authentication: Convex functions and API routes are public. Anyone with the URL can view, change or delete projects. Paid routes are rate-limited per client and globally (convex/rateLimits.ts), which caps but does not prevent spend. Do not deploy with real customer data.
 - Work-email enrichment returns 403 on the current Crustdata plan, so most contacts have no email. Use "Add person manually" (e.g. your own address) to demonstrate sending.
 - The daily send cap is counted per project, not per sender.
 - Reply tracking, follow-ups and booked calls are not built.

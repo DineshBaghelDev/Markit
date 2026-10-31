@@ -68,3 +68,13 @@ Record checks actually performed, findings, and limitations here. Keep entries d
 - Fixed stale docs: README scope (claimed sending and enrichment were missing), `.env.example` delay comment and missing `DEMO_TEMPLATE_PROJECT_ID`, setup notes, progress, decisions and context handoff.
 - Open, documented in README: no authentication on Convex functions or API routes; daily send cap is per project; live Autopilot can exceed the 300 s Vercel limit.
 - Not run: browser check of the changed labels.
+
+## 2026-10-31 Theme, inbox, rate limiting, project cleanup
+
+- Dark palette is now unconditional; checked in Chrome on a light-mode machine (Campaign and /new render dark).
+- Regenerate-all on a project with sent emails failed with "This email was already sent"; sent contacts are now skipped (unit-tested).
+- Find decision-makers: ignored clicks, progress below the table, top-only errors and empty results are now visible (toast + top progress). Not re-tested by clicking through a live run.
+- Inbox tab verified in Chrome on a project with 5 simulated sends: demo label, 4 sample replies, 1 "No reply yet".
+- Rate limiting verified against the dev server: 5 send requests pass, the 6th returns 429 with Retry-After; a second client is unaffected. Pushed to the dev Convex deployment only.
+- Deleted 16 rehearsal/abandoned projects from the dev database (4 kept), with no orphaned rows.
+- Incident: while testing the new delete route, the guided-example template project was deleted, because the dev server served a stale module in which the template id was undefined and the guard compared against undefined. The template was rebuilt from a JSONL export taken before the cleanup (45 companies, 9 contacts, 5 drafts) under a new id, jn75fbnkx8rkxhp34e76e5vkfs8ha0tq. The guard now reads the id from its own module and fails closed; refusal and a normal delete were both verified, and "Use example" replays from the new template.
