@@ -10,7 +10,7 @@ import type { ParsedBusinessInput } from "@/lib/schemas";
 // progress animation play. Any edited or new input runs the live pipeline.
 const TEMPLATE_ID = (process.env.DEMO_TEMPLATE_PROJECT_ID?.trim() || "jn76x1x28m1hgz9rtqw7tdg3xn8hasea") as Id<"projects">;
 
-export const demoPause = () => new Promise((resolve) => setTimeout(resolve, 5_000 + Math.random() * 3_000));
+export const demoPause = () => new Promise((resolve) => setTimeout(resolve, 2_500 + Math.random() * 1_000));
 
 export async function demoTemplateFor(input: ParsedBusinessInput) {
   if (input.documents.length) return null;

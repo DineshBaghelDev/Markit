@@ -11,10 +11,10 @@ const CACHE_DIR = path.join(process.cwd(), ".demo-cache");
 export const demoCacheEnabled = () => process.env.DEMO_CACHE === "on";
 
 // Demo pacing (DEMO_STEP_DELAY=on): a replayed step returns instantly, which hides the progress animation.
-// Pads each pipeline request to a random 5-8 s. Slower (live) requests are never delayed further.
+// Pads each pipeline request to a random 2.5-3.5 s. Slower (live) requests are never delayed further.
 export async function paceDemoStep(startedAt: number) {
   if (process.env.DEMO_STEP_DELAY !== "on") return;
-  const wait = 5_000 + Math.random() * 3_000 - (Date.now() - startedAt);
+  const wait = 2_500 + Math.random() * 1_000 - (Date.now() - startedAt);
   if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
 }
 
