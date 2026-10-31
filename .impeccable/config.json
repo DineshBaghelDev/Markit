@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/app/globals.css"
+        ],
+        "createdAt": "2026-10-31T09:26:30.163Z",
+        "reason": "Designer spec: context/Markit · your market copilot_updated.html line 280 marks selected table rows with an inset left bar; user asked to replicate that design"
+      }
+    ]
+  }
+}
