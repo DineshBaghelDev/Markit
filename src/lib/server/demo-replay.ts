@@ -2,7 +2,7 @@ import "server-only";
 
 import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { api } from "../../../convex/_generated/api";
-import type { Doc, Id } from "../../../convex/_generated/dataModel";
+import type { Doc } from "../../../convex/_generated/dataModel";
 import type { ParsedBusinessInput } from "@/lib/schemas";
 import { DEMO_TEMPLATE_ID } from "@/lib/server/demo-template";
 import { draftTargets } from "@/lib/draft-targets";
