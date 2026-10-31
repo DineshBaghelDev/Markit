@@ -134,6 +134,7 @@ function IcpSection({ project }: { project: Doc<"projects"> }) {
       {icp.segments.map((s) => (
         <div key={s.name}>
           <b>Segment: {s.name}</b>: {s.industries.join(", ")}<br />
+          {s.searchQuery && <span className="text-sm">Semantic search: &ldquo;{s.searchQuery}&rdquo;<br /></span>}
           <span className="text-sm">{s.rationale} Use cases: {s.useCases.join("; ")}</span>
         </div>
       ))}
@@ -192,7 +193,7 @@ function ProspectTable({ companies }: { companies: Doc<"companies">[] }) {
                   {q ? (
                     <details>
                       <summary className="cursor-pointer">{q.reasons[0]}</summary>
-                      <p>Breakdown: fit {q.icpFit}/40 · use case {q.useCaseRelevance}/30 · signals {q.observedSignals}/20 · geo {q.geography}/10</p>
+                      <p>Breakdown: fit {q.icpFit}/40 · use case {q.useCaseRelevance}/35 · signals {q.observedSignals}/25</p>
                       <List title="Reasons" items={q.reasons} />
                       <List title="Evidence" items={q.evidence.map((e) => `${e.claim} (${e.field} = ${e.value})`)} />
                       <List title="Missing" items={q.missingInformation} />
@@ -212,7 +213,12 @@ function ContactTable({ contacts, companies }: { contacts: Doc<"contacts">[]; co
   const setSelected = useMutation(api.contacts.setSelected);
   if (!contacts.length) return <p>No contacts yet.</p>;
   const companyName = (id: Id<"companies">) => companies.find((c) => c._id === id)?.name ?? "";
+  const withoutContacts = companies.filter((c) => c.selected && !contacts.some((x) => x.companyId === c._id));
   return (
+    <>
+    {withoutContacts.length > 0 && (
+      <p className="text-sm">No relevant decision-makers found at: {withoutContacts.map((c) => c.name).join(", ")}</p>
+    )}
     <table className="w-full text-sm">
       <thead><tr className="text-left"><th></th><th>Name</th><th>Title</th><th>Company</th><th>Email</th><th>Why</th></tr></thead>
       <tbody>
@@ -228,6 +234,7 @@ function ContactTable({ contacts, companies }: { contacts: Doc<"contacts">[]; co
         ))}
       </tbody>
     </table>
+    </>
   );
 }
 

@@ -15,7 +15,7 @@ export type ScoredQualification = Omit<Qualification, "evidence"> & {
   evidence: { field: string; claim: string; value: string }[];
 };
 
-// Fixed rubric: ICP fit 40, use case 30, observed signals 20, geography 10.
+// Fixed rubric: ICP fit 40, use case 35, observed signals 25. Geography is enforced by the search filter, not scored.
 // Evidence is kept only when it points at a field actually present in the returned record.
 export function scoreQualification(q: Qualification, company: unknown): ScoredQualification {
   const evidence = q.evidence
@@ -24,18 +24,16 @@ export function scoreQualification(q: Qualification, company: unknown): ScoredQu
     .map(({ raw, ...e }) => ({ ...e, value: (typeof raw === "string" ? raw : JSON.stringify(raw)).slice(0, 200) }));
 
   const icpFit = clamp(q.icpFit, 40);
-  const useCaseRelevance = clamp(q.useCaseRelevance, 30);
+  const useCaseRelevance = clamp(q.useCaseRelevance, 35);
   // No supported evidence means no observed signal can be claimed.
-  const observedSignals = evidence.length ? clamp(q.observedSignals, 20) : 0;
-  const geography = clamp(q.geography, 10);
+  const observedSignals = evidence.length ? clamp(q.observedSignals, 25) : 0;
 
   return {
     ...q,
     icpFit,
     useCaseRelevance,
     observedSignals,
-    geography,
     evidence,
-    score: icpFit + useCaseRelevance + observedSignals + geography,
+    score: icpFit + useCaseRelevance + observedSignals,
   };
 }

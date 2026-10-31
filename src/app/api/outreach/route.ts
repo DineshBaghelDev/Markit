@@ -31,6 +31,7 @@ export const POST = jsonRoute(
         icp,
         company: company?.data,
         qualification: company?.qualification,
+        proofPoints: typeof project.input?.proofPoints === "string" ? project.input.proofPoints : "",
         contact: { name: contact.name, title: contact.title, relevance: contact.relevance },
       });
       await fetchMutation(api.drafts.upsert, { projectId: id, contactId: contact._id, ...draft });

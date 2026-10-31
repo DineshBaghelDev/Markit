@@ -21,7 +21,9 @@ export const POST = jsonRoute(z.object({ projectId: z.string() }), async ({ proj
   if (!selected.length) throw new Error("Select at least one company.");
 
   const perCompany = await Promise.all(selected.map(async (company) => {
-    const { profiles, cached } = await personSearch(buildPeopleAtCompanyQuery(company.crustdataId));
+    // Prefer people located in the target countries; fall back to any location if none are found.
+    let { profiles, cached } = await personSearch(buildPeopleAtCompanyQuery(company.crustdataId, icp.countries));
+    if (!profiles.length) ({ profiles, cached } = await personSearch(buildPeopleAtCompanyQuery(company.crustdataId)));
     const candidates = profiles.map((person) => {
       // A person can hold several current roles; use the one at this company.
       const role = person.experience?.employment_details?.current
@@ -54,5 +56,6 @@ export const POST = jsonRoute(z.object({ projectId: z.string() }), async ({ proj
 
   const contacts = perCompany.flat();
   await fetchMutation(api.contacts.replaceForProject, { projectId: id, contacts });
-  return { count: contacts.length };
+  const withoutContacts = selected.filter((_, i) => perCompany[i].length === 0).map((c) => c.name);
+  return { count: contacts.length, withoutContacts };
 });

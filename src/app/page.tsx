@@ -1,75 +1,63 @@
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { postJson } from "@/lib/post-json";
+import { BloCanvas } from "@/components/markit/blo";
 
-const FIELDS = [
-  ["companyName", "Company name"],
-  ["website", "Website (optional)"],
-  ["product", "What do you sell?"],
-  ["valueProposition", "Problem solved / value proposition"],
-  ["geography", "Target geography"],
-  ["objective", "Sales objective"],
+const COLUMNS = [
+  ["01 Understand", ["Business profile", "Value proposition", "Sales objective"]],
+  ["02 Target", ["Ideal customer profile", "Buying signals", "Market context"]],
+  ["03 Qualify", ["Company discovery", "Fit scores with evidence", "Decision-makers"]],
+  ["04 Reach", ["Personalised emails", "Review and approve", "Export to CSV"]],
 ] as const;
 
-export default function Home() {
-  const router = useRouter();
-  const projects = useQuery(api.projects.list);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      const input = Object.fromEntries(new FormData(event.currentTarget));
-      const { projectId } = await postJson<{ projectId: string }>("/api/strategy", input);
-      router.push(`/project/${projectId}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setBusy(false);
-    }
-  }
-
+export default function Landing() {
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-8 p-6">
-      <h1 className="text-2xl font-semibold">Markit: AI sales agent</h1>
+    <section aria-label="Markit home">
+      {/* Switch to night mode before first paint; the Fx component keeps it in sync on navigation. */}
+      <script dangerouslySetInnerHTML={{ __html: "document.documentElement.dataset.view='home'" }} />
+      <div className="night">
+        <header className="n-wrap n-head">
+          <Link className="logo" href="/">markit<i>.</i></Link>
+          <nav className="n-nav" aria-label="Site">
+            <a href="#how">How it works</a>
+            <Link href="/new">Try the agent</Link>
+            <a href="#how">Built on Crustdata</a>
+          </nav>
+          <Link className="btn-n light" href="/new">Start selling ↗</Link>
+        </header>
 
-      <form onSubmit={onSubmit} className="space-y-3">
-        {FIELDS.map(([name, label]) => (
-          <label key={name} className="block">
-            <span className="text-sm">{label}</span>
-            {name === "product" || name === "valueProposition" ? (
-              <textarea name={name} rows={3} className="block w-full border p-2" required={name === "product"} />
-            ) : (
-              <input name={name} className="block w-full border p-2" required={name === "companyName" || name === "geography"} />
-            )}
-          </label>
-        ))}
-        <button disabled={busy} className="border px-4 py-2">
-          {busy ? "Generating profile and ICP…" : "Generate strategy"}
-        </button>
-        {error && <p className="text-red-600">{error}</p>}
-      </form>
+        <div className="hero">
+          <div className="live"><b />Your market copilot</div>
+          <h1><span>Know who’s</span> ready to buy.</h1>
+          <p>
+            Tell Markit what you sell and where. It finds the companies with a reason to buy, the people who
+            decide, and writes the first email, with the evidence behind every claim.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link className="btn-n lime" href="/new">Try it on your product ↗</Link>
+            <a className="btn-n ghost" href="#how">See how it works</a>
+          </div>
+          <div className="hero-blo">
+            <BloCanvas tone="night" particles grid={36} expr="happy" wide={1.8} label="Blo, the Markit mascot, made of glowing dots" />
+          </div>
+        </div>
 
-      <section>
-        <h2 className="font-semibold">Projects</h2>
-        {projects === undefined ? <p>Loading…</p> : projects.length === 0 ? <p>No projects yet.</p> : (
-          <ul className="list-disc pl-5">
-            {projects.map((p) => (
-              <li key={p._id}>
-                <Link className="underline" href={`/project/${p._id}`}>{p.profile?.companyName ?? "Untitled"}</Link>{" "}
-                <span className="text-sm text-gray-500">({p.status})</span>
-              </li>
+        <div className="n-wrap" id="how">
+          <div className="statement">
+            <div className="dots" aria-label="Find. Qualify. Reach.">FIND. QUALIFY. REACH.</div>
+            <p className="m-0 max-w-[360px] text-sm leading-relaxed text-[var(--ash)]">
+              Built on Crustdata’s live company and people graph, so every prospect comes with the evidence behind it.
+            </p>
+          </div>
+          <div className="n-cols">
+            {COLUMNS.map(([heading, links]) => (
+              <div key={heading}>
+                <div className="label pb-3">{heading}</div>
+                {links.map((l) => <Link key={l} href="/new">{l}</Link>)}
+              </div>
             ))}
-          </ul>
-        )}
-      </section>
-    </main>
+          </div>
+          <div className="n-foot label"><span>© 2026 Markit</span><span>ContextCon, IIT Bombay</span></div>
+        </div>
+      </div>
+    </section>
   );
 }

@@ -8,6 +8,7 @@ export const businessInputSchema = z.object({
   valueProposition: z.string().trim().max(2_000).default(""),
   geography: z.string().trim().min(1, "Enter a target geography.").max(300),
   objective: z.string().trim().max(1_000).default(""),
+  proofPoints: z.string().trim().max(2_000).default(""),
 });
 export type BusinessInput = z.infer<typeof businessInputSchema>;
 
@@ -25,7 +26,8 @@ export type BusinessProfile = z.infer<typeof businessProfileSchema>;
 export const icpSchema = z.object({
   segments: z.array(z.object({
     name: z.string(),
-    industries: z.array(z.string()).describe("LinkedIn-style industry names, e.g. 'Oil & Energy', 'Software Development'"),
+    searchQuery: z.string().default("").describe("One sentence describing the ideal company in this segment the way its own company description would read; used for semantic search"),
+    industries: z.array(z.string()).describe("LinkedIn-style industry names, e.g. 'Utilities', 'Software Development'"),
     useCases: z.array(z.string()),
     rationale: z.string(),
   })).min(1).max(4),
@@ -56,9 +58,8 @@ export type Strategy = z.infer<typeof strategySchema>;
 export const qualificationSchema = z.object({
   companyId: z.number().int(),
   icpFit: z.number().describe("0-40"),
-  useCaseRelevance: z.number().describe("0-30"),
-  observedSignals: z.number().describe("0-20; 0 if no signal is present in the data"),
-  geography: z.number().describe("0-10"),
+  useCaseRelevance: z.number().describe("0-35"),
+  observedSignals: z.number().describe("0-25; 0 if no relevant signal is present in the data"),
   reasons: z.array(z.string()),
   evidence: z.array(z.object({
     field: z.string().describe("Dotted path of the field in the supplied company record, e.g. funding.last_round_type"),

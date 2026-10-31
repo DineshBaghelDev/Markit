@@ -17,6 +17,8 @@ function compact(company: CrustdataCompany) {
     company as Record<string, unknown>;
   const info = { ...(basic_info as Record<string, unknown> | undefined) };
   delete info.logo_permalink;
+  // Long descriptions add tokens and latency without changing the assessment much.
+  if (typeof info.description === "string") info.description = info.description.slice(0, 700);
   return {
     crustdata_company_id: company.crustdata_company_id,
     basic_info: info, headcount, funding, locations, taxonomy, revenue, hiring, followers,
@@ -38,15 +40,17 @@ export const POST = jsonRoute(z.object({ projectId: z.string() }), async ({ proj
     const countries = [...new Set((await Promise.all(
       icp.countries.map((c) => companyAutocomplete("locations.country", c, 1)),
     )).flat())];
+    // Industry autocomplete is only needed for segments without a semantic search description.
     const segments = await Promise.all(icp.segments.map(async (segment) => ({
       name: segment.name,
-      industries: [...new Set((await Promise.all(
+      searchQuery: segment.searchQuery,
+      industries: segment.searchQuery.trim() ? [] : [...new Set((await Promise.all(
         segment.industries.map((i) => companyAutocomplete("taxonomy.professional_network_industry", i, 2)),
       )).flat())],
     })));
 
     const queries = buildCompanyQueries(icp, segments, countries);
-    if (!queries.length) throw new Error("No ICP industry matched a Crustdata industry. Edit the ICP industries.");
+    if (!queries.length) throw new Error("No ICP segment could be searched. Add a search description or industries.");
     const results = await Promise.all(queries.map(async ({ segment, query }) =>
     {
       const { companies, cached } = await companySearch(query);
@@ -55,7 +59,8 @@ export const POST = jsonRoute(z.object({ projectId: z.string() }), async ({ proj
     const unique = dedupeCompanies(results.flat());
 
     const records = unique.map(compact);
-    const batches = Array.from({ length: Math.ceil(records.length / 8) }, (_, i) => records.slice(i * 8, i * 8 + 8));
+    const BATCH = 12;
+    const batches = Array.from({ length: Math.ceil(records.length / BATCH) }, (_, i) => records.slice(i * BATCH, (i + 1) * BATCH));
     const qualifications = (await Promise.all(batches.map((b) => qualifyCompanies(profile, icp, b)))).flat();
     const byId = new Map(qualifications.map((q) => [q.companyId, q]));
 
