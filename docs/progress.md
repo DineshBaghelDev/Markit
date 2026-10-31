@@ -12,11 +12,13 @@ Updated: 2026-10-31
 
 ## Active
 
+- UI rebuilt on the updated prototype (context/Markit · your market copilot_updated.html): sidebar stepper with five steps (Business, Strategy, Prospects, Outreach, Campaign), click-to-edit profile, ICP editor with reasoning panel, prospects table with evidence drawer and decision-maker cards, three-column email review, and a Campaign step that sends via Gmail (allowlist only). Follow-ups, reply inbox and booked calls from the prototype are not built.
+
 - None. Both demo scenarios are recorded: VoltGrid Storage (UAE BESS: 30 companies, 7 contacts, 4 drafts) and AuditPilot (UK compliance SaaS: 13 companies, 6 contacts, 2 drafts).
 
 ## Deferred
 
-- Gmail sending, reply classification, follow-ups, analytics; email enrichment (403 on current Crustdata plan); UI styling; Vercel deployment.
+- Gmail sending, reply classification, follow-ups, analytics; email enrichment (403 on current Crustdata plan); Vercel deployment.
 
 ## Known limitations
 

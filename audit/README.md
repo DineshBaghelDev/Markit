@@ -39,3 +39,15 @@ Record checks actually performed, findings, and limitations here. Keep entries d
 - Not yet done: browser click-through of the UI; Vercel deployment.
 - SaaS run (AuditPilot, UK): ICP edited to 50-1000 employees, then approved; 13 companies after dedupe (scores up to 81), 6 decision-makers at 3 selected companies, 2 drafts. ICP, roles and messaging differed clearly from the BESS run.
 - Page smoke check: /, and both /project/[id] pages returned HTTP 200. Interactive browser click-through not performed.
+
+## 2026-10-31 UI restyle to designer prototype
+
+- Ran: `npm run lint` (clean), `npm run typecheck` (clean), `npm test` (10 passed), `next build` (success); curl smoke check of / and /new against the running dev server (expected content present).
+- Not run: visual browser check (Chrome extension not connected). Project pages were not clicked through after the restyle.
+
+## 2026-10-31 UI rework and feature wiring
+
+- Fixed: every Blo mascot except the hero rendered blank, because undefined props overrode the engine defaults and produced NaN sizes.
+- Ran: tsc and eslint (clean), `npm test` (10 passed), `next build` (success). Headless-Chrome screenshots (dark mode) of /new and all four tabs of the VoltGrid and AuditPilot projects were reviewed after the fixes.
+- Not exercised end to end in the browser: document upload, autopilot run, email lookup and Gmail sending. The UI calls the routes, but no live run was triggered from the new screens.
+

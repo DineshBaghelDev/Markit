@@ -9,3 +9,11 @@ export async function postJson<T = Record<string, unknown>>(url: string, body: u
   if (!response.ok) throw new Error(data.error ?? `Request failed (HTTP ${response.status})`);
   return data as T;
 }
+
+// Multipart variant for routes that accept uploaded files.
+export async function postForm<T = Record<string, unknown>>(url: string, form: FormData): Promise<T> {
+  const response = await fetch(url, { method: "POST", body: form });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error ?? `Request failed (HTTP ${response.status})`);
+  return data as T;
+}

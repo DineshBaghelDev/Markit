@@ -22,6 +22,12 @@ export const updateIcp = mutation({
   handler: (ctx, { id, icp }) => ctx.db.patch("projects", id, { icp, icpApproved: false }),
 });
 
+// Profile corrections from the Business step. Later steps read the profile when they run.
+export const updateProfile = mutation({
+  args: { id: v.id("projects"), profile: v.any() },
+  handler: (ctx, { id, profile }) => ctx.db.patch("projects", id, { profile }),
+});
+
 export const approveIcp = mutation({
   args: { id: v.id("projects") },
   handler: (ctx, { id }) => ctx.db.patch("projects", id, { icpApproved: true, status: "icp_approved" }),

@@ -1,10 +1,13 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { EmptyState } from "@/components/markit/app-shell";
 
 export default function NotFound() {
+  const router = useRouter();
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-16">
-      <h1 className="text-2xl font-semibold">Page not found</h1>
-      <Link href="/" className="underline underline-offset-4">Return to Markit</Link>
+    <main className="main relative z-[1]">
+      <EmptyState title="Page not found" text="That page doesn’t exist." action="Return to Markit" onAction={() => router.push("/")} expr="surprised" />
     </main>
   );
 }

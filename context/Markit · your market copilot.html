@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Markit · your market copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Doto:wght@700;900&display=swap">
+<style>
+:root{
+  --night:#0B0B0B;--night-grain:#1C1C1C;--night-line:#262624;--night-line-strong:#3A3A37;
+  --paper:#F2F1EC;--ash:#9A9A94;--ash-dim:#6E6E69;--lime:#C6F24E;
+  --bg:#F2F1EC;--bg-grain:#D9D8D1;--surface:#FAFAF7;--field:#FFFFFF;--border:#DDDCD5;
+  --text:#111111;--text-muted:#6B6B66;--text-quiet:#85857F;
+  --accent-mark:#8DB52A;--accent-wash:#EEF6D6;--alert:#B42318;--alert-wash:#FBE9E7;
+  --btn-bg:#111111;--btn-text:#F2F1EC;--overlay:rgba(17,17,17,.28);
+  --sans:"Geist","Helvetica Neue",Arial,sans-serif;--mono:"Geist Mono",ui-monospace,Menlo,monospace;--dot:"Doto","Geist Mono",monospace;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E0E0D;--bg-grain:#1F1F1D;--surface:#161615;--field:#1C1C1B;--border:#2A2A28;
+  --text:#F2F1EC;--text-muted:#9A9A94;--text-quiet:#6E6E69;--accent-mark:#C6F24E;--accent-wash:#232B12;
+  --alert:#FF8A7A;--alert-wash:#3A1612;--btn-bg:#F2F1EC;--btn-text:#0B0B0B;--overlay:rgba(0,0,0,.5);color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0E0E0D;--bg-grain:#1F1F1D;--surface:#161615;--field:#1C1C1B;--border:#2A2A28;
+  --text:#F2F1EC;--text-muted:#9A9A94;--text-quiet:#6E6E69;--accent-mark:#C6F24E;--accent-wash:#232B12;
+  --alert:#FF8A7A;--alert-wash:#3A1612;--btn-bg:#F2F1EC;--btn-text:#0B0B0B;--overlay:rgba(0,0,0,.5);color-scheme:dark;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+html[data-view="home"]{background:var(--night)}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);color:var(--text);background:transparent;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent-mark);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.view{display:none}
+.view.on{display:block}
+.label{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+
+/* ---------- Night landing ---------- */
+.night{background:transparent;color:var(--paper);min-height:100vh;display:flex;flex-direction:column;position:relative;z-index:1}
+#bgfx{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
+html.blo-cursor,html.blo-cursor *{cursor:none!important}
+html.blo-cursor.cur-text input,html.blo-cursor.cur-text textarea,html.blo-cursor.cur-text [contenteditable="true"]{cursor:text!important}
+#cur{position:fixed;left:0;top:0;width:40px;height:35px;margin:-17px 0 0 -20px;pointer-events:none;z-index:100;transition:opacity .2s;will-change:transform}
+#cur canvas{width:40px;height:35px;display:block}
+#cur-tip{position:fixed;left:0;top:0;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--text);pointer-events:none;z-index:101;transition:opacity .2s}
+html[data-view="home"] #cur-tip{background:var(--lime)}
+html.cur-text #cur,html.cur-text #cur-tip{opacity:0!important}
+.hero-blo canvas{cursor:pointer;touch-action:manipulation}
+.night .label{color:var(--ash)}
+.n-wrap{max-width:1240px;width:100%;margin:0 auto;padding:0 32px}
+.n-head{display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between;padding-top:28px;padding-bottom:28px}
+.logo{font-weight:600;font-size:24px;letter-spacing:-.03em;text-decoration:none}
+.logo i{font-style:normal;color:var(--lime)}
+.n-nav{display:flex;flex-wrap:wrap;gap:28px}
+.n-nav a{color:var(--ash);text-decoration:none;font-size:14px}
+.n-nav a:hover{color:var(--paper)}
+.btn-n{min-height:44px;padding:0 20px;display:inline-flex;align-items:center;gap:8px;border-radius:6px;text-decoration:none;font-weight:500;font-size:14px;border:1px solid transparent;cursor:pointer;transition:background .16s,color .16s}
+.btn-n.light{background:var(--paper);color:var(--night)}
+.btn-n.lime{background:var(--lime);color:var(--night);min-height:48px;padding:0 22px}
+.btn-n.lime:hover{background:#d5f77a}
+.btn-n.ghost{border-color:var(--night-line-strong);color:var(--paper);min-height:48px;padding:0 22px;background:transparent}
+.btn-n.ghost:hover{border-color:var(--ash)}
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px;padding:24px 32px 0}
+.hero h1{margin:0;max-width:820px;font-weight:300;font-size:clamp(44px,7vw,80px);line-height:1.02;letter-spacing:-.035em}
+.hero h1 span{color:var(--ash-dim)}
+.hero p{margin:0;max-width:520px;color:var(--ash);font-size:16px;line-height:1.6}
+.live{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--lime);letter-spacing:.04em}
+.live b{width:7px;height:7px;border-radius:50%;background:var(--lime);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.hero-blo{width:min(760px,100%);aspect-ratio:760/420;margin-top:8px}
+.hero-blo canvas{width:100%;height:100%;display:block}
+.statement{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px;border-top:1px solid var(--night-line);padding-top:36px}
+.dots{font-family:var(--dot);font-weight:900;font-size:clamp(34px,5vw,58px);line-height:1;letter-spacing:.02em}
+.n-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px;padding:40px 0 0}
+.n-cols a{display:block;color:var(--paper);text-decoration:none;font-size:14px;padding:5px 0}
+.n-cols a:hover{color:var(--lime)}
+.n-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;border-top:1px solid var(--night-line);padding-top:20px;margin-top:56px;margin-bottom:32px}
+
+/* ---------- App (paper) ---------- */
+.app{background:transparent;min-height:100vh;padding-bottom:72px;position:relative;z-index:1}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.a-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin:16px;padding:10px 14px 10px 20px}
+.a-head .logo{font-size:22px}
+.a-head .logo i{color:var(--accent-mark)}
+.tabs{display:flex;flex-wrap:wrap;gap:2px}
+.tab{font-size:13px;color:var(--text-muted);text-decoration:none;padding:8px 14px;border-radius:999px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.tab:hover{color:var(--text)}
+.tab[aria-current="page"]{background:var(--btn-bg);color:var(--btn-text)}
+.tab .done{width:6px;height:6px;border-radius:50%;background:var(--accent-mark);display:none}
+.tab.is-done .done{display:inline-block}
+.agent{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-muted)}
+.agent canvas{width:34px;height:30px;display:block}
+.pill{padding:6px 12px;border:1px solid var(--border);border-radius:999px;font-size:13px;color:var(--text)}
+main.a-main{max-width:1180px;margin:0 auto;padding:28px 32px 0;display:flex;flex-direction:column;gap:28px}
+.title{display:flex;flex-direction:column;gap:12px}
+.title h1{margin:0;font-weight:300;font-size:clamp(38px,5vw,56px);line-height:1.04;letter-spacing:-.035em}
+.title h1 span{color:var(--text-quiet)}
+.title p{margin:0;max-width:600px;color:var(--text-muted);font-size:15px;line-height:1.6}
+.row-between{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:flex-end}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr));gap:20px;align-items:start}
+.btn{min-height:48px;padding:0 22px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:8px;border:1px solid transparent;background:var(--btn-bg);color:var(--btn-text);font-weight:500;font-size:14px;cursor:pointer;text-decoration:none;transition:opacity .16s,background .16s}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.sec{background:transparent;color:var(--text);border-color:var(--border)}
+.btn.sec:hover{border-color:var(--text-muted);opacity:1}
+.btn.ok{background:var(--accent-wash);color:var(--text);border-color:var(--accent-mark)}
+.btn.sm{min-height:40px;padding:0 14px;font-size:13px}
+.field{display:flex;flex-direction:column;gap:6px}
+.inp{width:100%;border:1px solid var(--border);background:var(--field);border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.5;color:var(--text)}
+textarea.inp{resize:vertical}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;font-size:13px;background:var(--field);white-space:nowrap}
+.chip button{border:0;background:none;padding:0 0 0 2px;cursor:pointer;color:var(--text-muted);font-size:14px;line-height:1;min-width:20px;min-height:20px}
+.chip.found{background:var(--accent-wash);border-color:var(--accent-mark)}
+.src{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border:1px dotted var(--text);border-radius:4px;color:var(--text);white-space:nowrap}
+.examples{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ex{border:1px solid var(--border);background:var(--field);border-radius:999px;padding:8px 14px;font-size:13px;cursor:pointer;min-height:40px}
+.ex[aria-pressed="true"]{background:var(--btn-bg);color:var(--btn-text);border-color:var(--btn-bg)}
+
+/* agent log + empty */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:44px 28px;min-height:360px}
+.empty canvas{width:150px;height:130px}
+.empty p{margin:0;max-width:340px;color:var(--text-muted);font-size:14px;line-height:1.6}
+.log{display:flex;flex-direction:column;gap:9px;font-family:var(--mono);font-size:12.5px;line-height:1.5;text-align:left;width:100%;max-width:440px}
+.log div{display:flex;gap:10px;color:var(--text-muted);animation:rise .24s var(--ease) both}
+.log div.done{color:var(--text)}
+.log div i{font-style:normal;width:14px;flex:none;text-align:center}
+.log div.done i{color:var(--accent-mark)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.reveal>*{animation:rise .24s var(--ease) both}
+
+/* profile card */
+.kv{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px 18px;margin:0;font-size:14px;line-height:1.5}
+.kv dt{padding-top:3px}
+.kv dd{margin:0}
+.dotline{border-top:1px dotted var(--text-muted)}
+
+/* strategy */
+.segs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px}
+.seg{text-align:left;padding:20px;display:flex;flex-direction:column;gap:10px;cursor:pointer;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text);min-height:44px}
+.seg[aria-pressed="true"]{background:var(--accent-wash);border-color:var(--accent-mark)}
+.seg .top{display:flex;justify-content:space-between;align-items:center}
+.seg strong{font-weight:500;font-size:16px}
+.seg .p{display:block;margin:0;font-size:13px;line-height:1.55;color:var(--text-muted)}
+.icp-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;padding:14px 0;border-bottom:1px solid var(--border);align-items:start}
+.icp-row .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.add{border:1px dashed var(--border);background:transparent;border-radius:999px;padding:5px 10px;font-size:13px;width:120px;min-height:32px}
+.intel{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:20px}
+.intel div{display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.55;align-items:flex-start}
+
+/* prospects */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.toolbar .inp{width:auto;min-height:44px;padding:0 12px}
+.range{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-muted)}
+.range input{accent-color:var(--accent-mark)}
+.tablebox{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:880px}
+th{text-align:left;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:14px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:14px 12px;border-bottom:1px solid var(--border);font-size:13.5px;line-height:1.45;vertical-align:top}
+tbody tr{cursor:pointer;transition:background .16s}
+tbody tr:hover{background:var(--bg)}
+tbody tr.sel{background:var(--accent-wash)}
+tbody tr:last-child td{border-bottom:0}
+.co{font-weight:500;font-size:14px}
+.meta{color:var(--text-muted);font-size:12.5px}
+.score{font-family:var(--mono);font-size:15px;font-weight:500}
+.bar{width:64px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar span{display:block;height:100%;background:var(--accent-mark);border-radius:3px;transition:width .5s var(--ease)}
+.cbx{width:20px;height:20px;accent-color:var(--accent-mark);cursor:pointer}
+.sigs{display:flex;flex-wrap:wrap;gap:4px}
+.sigs .chip{font-size:12px;padding:3px 9px}
+.selbar{position:sticky;bottom:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 12px 12px 20px;z-index:5}
+.note{font-size:12px;color:var(--text-muted)}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:var(--overlay);opacity:0;pointer-events:none;transition:opacity .28s;z-index:20}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--surface);border-left:1px solid var(--border);transform:translateX(100%);transition:transform .28s var(--ease);z-index:21;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 24px) 28px calc(env(safe-area-inset-bottom,0px) + 24px);gap:20px;overflow-y:auto}
+.drawer.open{transform:none}
+.drawer h2{margin:0;font-weight:400;font-size:26px;letter-spacing:-.02em}
+.bd{display:flex;flex-direction:column;gap:12px}
+.bd-row{display:grid;grid-template-columns:minmax(0,1fr) 54px;gap:6px 12px;font-size:14px;align-items:center}
+.bd-row .track{grid-column:1/-1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.bd-row .track span{display:block;height:100%;width:0;background:var(--accent-mark);transition:width .6s var(--ease)}
+.bd-row b{font-family:var(--mono);font-weight:500;text-align:right}
+.ev{display:flex;flex-direction:column;gap:12px}
+.ev div{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-size:14px;line-height:1.5}
+.x{align-self:flex-end;border:1px solid var(--border);background:transparent;border-radius:999px;width:44px;height:44px;cursor:pointer;font-size:18px;flex:none}
+
+/* outreach */
+.out{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.out{grid-template-columns:1fr}}
+.contacts{display:flex;flex-direction:column;padding:8px}
+.ct{display:flex;flex-direction:column;gap:3px;text-align:left;padding:14px;border-radius:10px;border:0;background:transparent;cursor:pointer;color:var(--text);min-height:44px}
+.ct:hover{background:var(--bg)}
+.ct[aria-current="true"]{background:var(--accent-wash)}
+.ct .nm{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:500;font-size:14px}
+.status{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;border:1px solid var(--border);color:var(--text-muted);white-space:nowrap}
+.status.ap{border-color:var(--accent-mark);color:var(--text);background:var(--accent-wash)}
+.editor{padding:24px;display:flex;flex-direction:column;gap:16px}
+.to{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;font-size:14px}
+.check{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.5;background:var(--accent-wash)}
+.check.bad{background:var(--alert-wash);color:var(--text)}
+.check.bad strong{color:var(--alert)}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.why{padding:20px 24px;display:flex;flex-direction:column;gap:12px}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translate(-50%,20px);opacity:0;background:var(--btn-bg);color:var(--btn-text);padding:12px 20px;border-radius:999px;font-size:14px;transition:opacity .2s,transform .2s var(--ease);z-index:40;pointer-events:none;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:640px){
+  .n-wrap,main.a-main{padding-left:18px;padding-right:18px}
+  .icp-row{grid-template-columns:1fr;gap:8px}
+  .kv{grid-template-columns:1fr;gap:4px}
+  .kv dd{margin-bottom:10px}
+  .a-head{margin:10px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="bgfx" aria-hidden="true"></canvas>
+
+<!-- ================= LANDING ================= -->
+<section class="view" id="v-home" aria-label="Markit home">
+<div class="night">
+  <header class="n-wrap n-head">
+    <a class="logo" href="#home">markit<i>.</i></a>
+    <nav class="n-nav" aria-label="Site">
+      <a href="#how">How it works</a>
+      <a href="#profile">Try the agent</a>
+      <a href="#how">Built on Crustdata</a>
+    </nav>
+    <a class="btn-n light" href="#profile">Start selling ↗</a>
+  </header>
+
+  <div class="hero">
+    <div class="live"><b></b>Your market copilot</div>
+    <h1><span>Know who’s</span> ready to buy.</h1>
+    <p>Tell Markit what you sell and where. It finds the companies with a reason to buy, the people who decide, and writes the first email, with a source behind every claim.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center">
+      <a class="btn-n lime" href="#profile">Try it on your product ↗</a>
+      <a class="btn-n ghost" href="#how">See how it works</a>
+    </div>
+    <div class="hero-blo"><canvas id="blo-hero" role="img" aria-label="Blo, the Markit mascot, made of glowing dots"></canvas></div>
+  </div>
+
+  <div class="n-wrap" id="how">
+    <div class="statement">
+      <div class="dots" aria-label="Find. Qualify. Reach.">FIND. QUALIFY. REACH.</div>
+      <p style="margin:0;max-width:360px;color:var(--ash);font-size:14px;line-height:1.6">Built on Crustdata’s live company and people graph, so every prospect comes with the evidence behind it.</p>
+    </div>
+    <div class="n-cols">
+      <div><div class="label" style="padding-bottom:12px">01 Understand</div><a href="#profile">Business profile</a><a href="#profile">Value proposition</a><a href="#profile">Sales objective</a></div>
+      <div><div class="label" style="padding-bottom:12px">02 Target</div><a href="#strategy">Ideal customer profile</a><a href="#strategy">Buying signals</a><a href="#strategy">Market intelligence</a></div>
+      <div><div class="label" style="padding-bottom:12px">03 Qualify</div><a href="#prospects">Company discovery</a><a href="#prospects">Fit scores with evidence</a><a href="#prospects">Decision-makers</a></div>
+      <div><div class="label" style="padding-bottom:12px">04 Reach</div><a href="#outreach">Personalised emails</a><a href="#outreach">Claim checks</a><a href="#outreach">Approve and export</a></div>
+    </div>
+    <div class="n-foot label"><span>© 2026 Markit</span><span>ContextCon, IIT Bombay</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ================= APP SHELL ================= -->
+<div class="app" id="app" hidden>
+  <header class="panel a-head">
+    <a class="logo" href="#home">markit<i>.</i></a>
+    <nav class="tabs" aria-label="Workflow">
+      <a class="tab" href="#profile" data-tab="profile"><span class="done"></span>01 Profile</a>
+      <a class="tab" href="#strategy" data-tab="strategy"><span class="done"></span>02 Strategy</a>
+      <a class="tab" href="#prospects" data-tab="prospects"><span class="done"></span>03 Prospects</a>
+      <a class="tab" href="#outreach" data-tab="outreach"><span class="done"></span>04 Outreach</a>
+    </nav>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div class="agent" aria-live="polite"><canvas id="blo-mini" aria-hidden="true"></canvas><span id="agent-status">Ready</span></div>
+      <span class="pill" id="project-pill">Battery storage, UAE</span>
+    </div>
+  </header>
+
+  <!-- 01 PROFILE -->
+  <section class="view" id="v-profile" aria-labelledby="h-profile">
+  <main class="a-main">
+    <div class="title">
+      <div class="label">Step 01 of 04</div>
+      <h1 id="h-profile"><span>What are you</span> selling?</h1>
+      <p>Describe it in your own words. Markit turns it into a profile that drives every step after: who to target, why, and what to say.</p>
+    </div>
+    <div class="examples" role="group" aria-label="Load an example business">
+      <span class="note">Try an example:</span>
+      <button class="ex" type="button" data-ex="bess" aria-pressed="true">Battery storage, UAE</button>
+      <button class="ex" type="button" data-ex="saas" aria-pressed="false">B2B SaaS, India</button>
+    </div>
+    <div class="grid2">
+      <form class="panel" id="f-profile" style="padding:28px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:14px">
+          <div class="field"><label class="label" for="i-co">Company</label><input class="inp" id="i-co" placeholder="Your company"></div>
+          <div class="field"><label class="label" for="i-web">Website, optional</label><input class="inp" id="i-web" placeholder="yourcompany.com"></div>
+        </div>
+        <div class="field"><label class="label" for="i-what">What you sell</label><textarea class="inp" id="i-what" rows="3"></textarea></div>
+        <div class="field"><label class="label" for="i-prob">Problem it solves</label><textarea class="inp" id="i-prob" rows="2"></textarea></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:14px">
+          <div class="field"><label class="label" for="i-geo">Where</label><input class="inp" id="i-geo"></div>
+          <div class="field"><label class="label" for="i-goal">Objective</label><input class="inp" id="i-goal"></div>
+        </div>
+        <p id="f-err" class="note" style="margin:0;color:var(--alert)" hidden>Add what you sell before building the profile.</p>
+        <button class="btn" type="submit" style="align-self:flex-start">Build my profile</button>
+      </form>
+      <div class="panel" id="profile-out" aria-live="polite"></div>
+    </div>
+  </main>
+  </section>
+
+  <!-- 02 STRATEGY -->
+  <section class="view" id="v-strategy" aria-labelledby="h-strategy">
+  <main class="a-main">
+    <div class="row-between">
+      <div class="title">
+        <div class="label">Step 02 of 04</div>
+        <h1 id="h-strategy"><span>Who has a</span> reason to buy.</h1>
+        <p>Markit reasoned back from your product to the businesses that feel the problem, what makes one a fit, and which signals say they need it now. Edit anything, then approve.</p>
+      </div>
+      <div class="actions" id="strat-actions" hidden>
+        <button class="btn sec" type="button" id="b-regen-icp">Regenerate</button>
+        <button class="btn" type="button" id="b-approve">Approve ICP</button>
+        <button class="btn" type="button" id="b-find" hidden>Find companies</button>
+      </div>
+    </div>
+    <div id="strategy-out" aria-live="polite"></div>
+  </main>
+  </section>
+
+  <!-- 03 PROSPECTS -->
+  <section class="view" id="v-prospects" aria-labelledby="h-prospects">
+  <main class="a-main">
+    <div class="row-between">
+      <div class="title">
+        <div class="label">Step 03 of 04</div>
+        <h1 id="h-prospects"><span>Worth approaching,</span> and why.</h1>
+        <p>Companies found through Crustdata from your approved ICP. The score is an explainable fit, not a chance of buying. Click any row to see the evidence.</p>
+      </div>
+    </div>
+    <div id="prospects-out" aria-live="polite"></div>
+  </main>
+  </section>
+
+  <!-- 04 OUTREACH -->
+  <section class="view" id="v-outreach" aria-labelledby="h-outreach">
+  <main class="a-main">
+    <div class="row-between">
+      <div class="title">
+        <div class="label">Step 04 of 04</div>
+        <h1 id="h-outreach"><span>The right person,</span> the right reason.</h1>
+        <p>Every email is written only from evidence, then checked claim by claim before you approve it. Nothing is sent from this screen.</p>
+      </div>
+      <div class="actions" id="out-actions" hidden>
+        <button class="btn sec" type="button" id="b-approve-all">Approve all</button>
+        <button class="btn" type="button" id="b-export">Export approved</button>
+      </div>
+    </div>
+    <div id="outreach-out" aria-live="polite"></div>
+  </main>
+  </section>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-labelledby="d-title" aria-hidden="true"></aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ===================== DATA ===================== */
+const SCEN = {
+  bess: {
+    label: 'Battery storage, UAE',
+    input: {co:'', web:'', what:'We manufacture commercial and industrial battery energy storage systems and want to acquire customers in the UAE.', prob:'Cuts peak electricity costs, keeps sites running in outages, stores solar power for the night.', geo:'United Arab Emirates', goal:'Book discovery calls'},
+    profile: [['Product','Commercial and industrial battery energy storage (BESS)'],['Category','Energy storage hardware, sold as projects'],['Who pays','Sites with high power bills or backup needs: factories, cold storage, malls, data centres, solar developers'],['Core value','Lower peak-demand charges, backup power, solar storage'],['Deal size','[Your price range]'],['Market','UAE, business to business'],['Goal','Discovery calls with decision-makers']],
+    assume: 'Long sales cycle with a technical evaluation. Buyers compare options on payback period.',
+    segments: [
+      {name:'Industrial and cold-chain sites', why:'Run heavy equipment around the clock, so peak charges and outages hit them hardest.'},
+      {name:'Solar EPC firms and developers', why:'Adding storage lets them sell bigger projects to clients they already have.'},
+      {name:'Malls and commercial real estate', why:'Large cooling loads, tenants who can’t tolerate downtime, and public sustainability goals.'}],
+    icp: {'Industries':['Manufacturing','Cold storage and logistics','Solar EPC','Commercial real estate','Data centres'],'Company size':['50 to 2,000 employees','Runs physical sites'],'Geography':['Dubai','Abu Dhabi','Sharjah','Northern emirates'],'Use cases':['Peak shaving','Backup power','Solar time-shift'],'Buying signals':['Hiring energy or facilities roles','New site or expansion','Recent funding','Headcount growth'],'Decision-makers':['Head of Facilities','Energy Manager','COO','CFO'],'Exclude':['Office-only tenants','Residential','Storage vendors']},
+    why: 'Storage pays back fastest where demand charges and outage costs are highest, so Markit ranks sites with heavy, continuous loads above offices.',
+    intel: [['Demand drivers','Commercial solar installs are growing, and storage is increasingly specified alongside them.','Web search'],['Buying triggers','New warehouses and plant expansions are when energy systems get chosen.','Crustdata · Company Enrich'],['Where to start','Dubai holds the most companies matching this ICP in the sample.','Crustdata · Company Search']],
+    pitch: 'We build commercial battery storage that cuts those peaks and keeps critical equipment running through outages.',
+    pitch2: 'Our battery systems shave peak-demand charges and act as backup power, usually paying back through lower bills.',
+    prospects: [
+      {id:'gcc',name:'Gulf Cold Chain LLC',seg:0,city:'Dubai',staff:'420',score:86,why:'Round-the-clock refrigeration across several warehouses, where peak charges and outages are costly.',signals:['Hiring an energy manager','New warehouse'],missing:'Annual energy spend',
+        ev:[['Hiring an Energy Manager, posted this month','Crustdata · Job Search'],['Opening a new warehouse in Dubai South','Web fetch · news'],['Size and industry match the ICP','Crustdata · Company Enrich']],bd:[32,23,19,12],
+        contact:{name:'Rania Al Mansoori',title:'Head of Facilities',role:'Owns energy costs and uptime across sites',email:'r•••••@gulfcoldchain.ae'},
+        subject:'Your new Dubai South warehouse and peak power costs',hook:'I saw Gulf Cold Chain is opening a new warehouse in Dubai South and hiring an energy manager.',pain:'Cold storage runs around the clock, so peak-demand charges and outages are usually the biggest energy costs to manage.'},
+      {id:'ssw',name:'Sahara Solar Works',seg:1,city:'Abu Dhabi',staff:'180',score:81,why:'Builds commercial solar. Storage lets them sell larger projects to existing clients.',signals:['Headcount up 22%','Recent funding'],missing:'Current storage partner',
+        ev:[['Headcount grew 22% in six months','Crustdata · Company Enrich'],['Raised a funding round this year','Crustdata · Company Enrich'],['Hiring project engineers','Crustdata · Job Search']],bd:[30,22,20,9],
+        contact:{name:'Omar Haddad',title:'Head of Business Development',role:'Chooses technology partners for new projects',email:null},
+        subject:'Storage for Sahara’s next solar projects',hook:'Congratulations on the recent funding and the team growth at Sahara Solar Works.',pain:'As projects get bigger, clients increasingly ask for storage alongside solar.',
+        removed:'“Raised a Series B”. Evidence confirms a funding round, but not the stage.'},
+      {id:'epm',name:'Emirates Precision Metals',seg:0,city:'Sharjah',staff:'950',score:77,why:'Heavy machinery with high peak demand. An outage stops production lines.',signals:['Plant expansion'],missing:'Number of sites',
+        ev:[['Announced a plant expansion','Web fetch · news'],['Hiring a maintenance planning lead','Crustdata · Job Search']],bd:[31,22,14,10],
+        contact:{name:'Vikram Iyer',title:'Chief Operating Officer',role:'Owns production uptime and capital spend',email:'v•••••@epmetals.ae'},
+        subject:'Keeping the expanded Sharjah plant running',hook:'I read about Emirates Precision Metals’ plant expansion in Sharjah.',pain:'More machinery usually means higher peak charges, and every outage stops the line.'},
+      {id:'flp',name:'Falcon Logistics Park',seg:0,city:'Dubai',staff:'310',score:72,why:'Large warehouse estate with cooling loads and roof space for solar.',signals:['Hiring a sustainability lead'],missing:'Rooftop solar status',
+        ev:[['Hiring a Sustainability Lead','Crustdata · Job Search'],['Size and industry match the ICP','Crustdata · Company Enrich']],bd:[29,20,13,10],
+        contact:{name:'Sara Qureshi',title:'Sustainability Lead',role:'New role, likely shaping the energy plan',email:'s•••••@falconpark.ae'},
+        subject:'Energy plans for Falcon Logistics Park',hook:'I noticed Falcon Logistics Park is building out a sustainability team.',pain:'Warehouses with big cooling loads are often where storage and solar cut the most cost and emissions.'},
+      {id:'mrg',name:'Marina Retail Group',seg:2,city:'Dubai',staff:'1,300',score:68,why:'Big cooling loads and public sustainability targets give a reason to act.',signals:['Sustainability lead hired'],missing:'Budget timing',
+        ev:[['Appointed a Head of Sustainability','Crustdata · Person Enrich']],bd:[27,19,12,10],
+        contact:{name:'Daniel Fernandes',title:'Head of Sustainability',role:'Owns energy and emissions targets',email:'d•••••@marinaretail.ae'},
+        subject:'Cutting peak cooling costs across Marina’s malls',hook:'Congratulations on stepping into the Head of Sustainability role at Marina Retail Group.',pain:'Malls carry heavy cooling loads, which makes peak-demand charges a large, controllable cost.'},
+      {id:'ndh',name:'Northern Data Hub',seg:0,city:'Ras Al Khaimah',staff:'90',score:61,why:'Needs uninterrupted power, but may already rely on diesel backup.',signals:['No recent signal'],missing:'Current backup setup',
+        ev:[['Industry matches the ICP','Crustdata · Company Enrich']],bd:[26,18,7,10],
+        contact:{name:'Aisha Rahman',title:'Operations Director',role:'Runs facilities and uptime',email:null},
+        subject:'Backup power at Northern Data Hub',hook:'Data centres like Northern Data Hub can’t afford a second of downtime.',pain:'Batteries can take over instantly while cutting peak charges the rest of the year.'}
+    ]
+  },
+  saas: {
+    label: 'B2B SaaS, India',
+    input: {co:'', web:'', what:'We sell AI software that automates accounts payable, from invoice capture to payment approval, and want customers in India.', prob:'Cuts invoice processing time, avoids late-payment penalties and catches duplicate invoices.', geo:'India', goal:'Book demos with finance leaders'},
+    profile: [['Product','AI accounts payable automation'],['Category','Finance software, annual subscription'],['Who pays','Mid-size companies with many suppliers and invoices'],['Core value','Faster invoice processing, fewer errors, no late fees'],['Deal size','[Your price range]'],['Market','India, business to business'],['Goal','Demos with finance leaders']],
+    assume: 'Buyers already use an ERP or accounting system, so integration matters more than features.',
+    segments: [
+      {name:'Fast-growing D2C and retail brands', why:'Supplier and invoice volume grows faster than the finance team.'},
+      {name:'Manufacturers with many suppliers', why:'Hundreds of vendor invoices a month, with matching against orders.'},
+      {name:'Multi-site healthcare chains', why:'Every new site adds suppliers, approvals and payment deadlines.'}],
+    icp: {'Industries':['D2C and retail','Manufacturing','Healthcare chains','Logistics'],'Company size':['200 to 3,000 employees','Uses an ERP'],'Geography':['Bengaluru','Mumbai','Pune','Delhi NCR','Hyderabad'],'Use cases':['Invoice capture','PO matching','Approval routing','Duplicate detection'],'Buying signals':['Hiring AP or finance roles','Recent funding','New sites or plants','Headcount growth'],'Decision-makers':['CFO','Finance Controller','Head of AP'],'Exclude':['Companies under 100 staff','Accounting software vendors']},
+    why: 'AP pain grows with invoice volume, so Markit prioritises companies adding suppliers and finance headcount quickly.',
+    intel: [['Demand drivers','E-invoicing rules are pushing finance teams to digitise invoice handling.','Web search'],['Buying triggers','Hiring AP staff is a sign the manual process is straining.','Crustdata · Job Search'],['Where to start','Bengaluru holds the most companies matching this ICP in the sample.','Crustdata · Company Search']],
+    pitch: 'We automate invoice capture, matching and approvals, so the team stops keying invoices by hand.',
+    pitch2: 'Our software reads every invoice, matches it to the order and routes it for approval, catching duplicates on the way.',
+    prospects: [
+      {id:'khf',name:'Kesar Home Foods',seg:0,city:'Bengaluru',staff:'650',score:84,why:'Fast growth means more suppliers and invoices than the finance team can key in.',signals:['Hiring AP executives','Headcount up 30%'],missing:'Current AP tool',
+        ev:[['Hiring two Accounts Payable Executives','Crustdata · Job Search'],['Headcount grew 30% this year','Crustdata · Company Enrich']],bd:[31,23,20,10],
+        contact:{name:'Ananya Rao',title:'CFO',role:'Owns finance operations and tooling',email:'a•••••@kesarfoods.in'},
+        subject:'Kesar’s growing AP team',hook:'I saw Kesar Home Foods is hiring accounts payable executives as the company grows.',pain:'Hiring is usually the first sign invoice volume is outrunning a manual process.'},
+      {id:'arc',name:'Arcwell Components',seg:1,city:'Pune',staff:'1,100',score:79,why:'Hundreds of supplier invoices a month that must match purchase orders.',signals:['New plant','Hiring a finance controller'],missing:'ERP in use',
+        ev:[['Opening a new plant','Web fetch · news'],['Hiring a Finance Controller','Crustdata · Job Search']],bd:[30,22,17,10],
+        contact:{name:'Rohit Kulkarni',title:'Finance Controller',role:'Runs AP and month-end close',email:'r•••••@arcwell.in'},
+        subject:'Invoices for Arcwell’s new plant',hook:'Congratulations on the new plant at Arcwell Components.',pain:'A new plant usually brings a new wave of suppliers and purchase orders to match.'},
+      {id:'brc',name:'Brightleaf Clinics',seg:2,city:'Hyderabad',staff:'900',score:73,why:'Each new clinic adds suppliers, approvals and payment deadlines.',signals:['Opening new clinics'],missing:'Number of suppliers',
+        ev:[['Announced new clinic openings','Web fetch · news'],['Size matches the ICP','Crustdata · Company Enrich']],bd:[28,21,14,10],
+        contact:{name:'Meera Pillai',title:'Head of Finance',role:'Owns payables and supplier payments',email:null},
+        subject:'Supplier payments across Brightleaf’s clinics',hook:'I noticed Brightleaf Clinics is opening new locations.',pain:'Every new clinic adds suppliers and approvals that are easy to lose track of.',
+        removed:'“Opened 12 clinics this year”. The news source names openings but no number.'},
+      {id:'tdw',name:'Tidewave Apparel',seg:0,city:'Mumbai',staff:'300',score:70,why:'Freshly funded and scaling suppliers ahead of growth.',signals:['Recent funding'],missing:'Finance team size',
+        ev:[['Raised a funding round this year','Crustdata · Company Enrich']],bd:[27,20,13,10],
+        contact:{name:'Kabir Shah',title:'CFO',role:'Sets finance stack after the raise',email:'k•••••@tidewave.in'},
+        subject:'Finance stack after Tidewave’s raise',hook:'Congratulations on Tidewave Apparel’s recent funding.',pain:'Post-raise is often when finance teams set up tools to scale without adding headcount.'},
+      {id:'nmb',name:'Nimbus Retail Labs',seg:0,city:'Delhi NCR',staff:'140',score:58,why:'Fits the industry, but smaller and no recent signal.',signals:['No recent signal'],missing:'Invoice volume',
+        ev:[['Industry matches the ICP','Crustdata · Company Enrich']],bd:[24,17,7,10],
+        contact:{name:'Priya Nair',title:'Finance Manager',role:'Handles payables day to day',email:'p•••••@nimbusretail.in'},
+        subject:'Accounts payable at Nimbus Retail Labs',hook:'Retail teams like Nimbus often juggle many small suppliers.',pain:'That usually means a lot of manual invoice entry each month.'}
+    ]
+  }
+};
+const BD_LABELS = [['ICP fit',35],['Use-case relevance',25],['Buying signals',25],['Evidence quality',15]];
+
+/* ===================== STATE ===================== */
+const state = {scen:'bess', profiled:false, strategy:false, approved:false, prospected:false, outreach:false,
+  segOn:[true,true,true], icp:null, selected:new Set(), filters:{q:'',seg:'all',min:0}, current:null, status:{}, variant:{}, drafts:{}, running:false};
+const S = () => SCEN[state.scen];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s, r=document) => r.querySelector(s);
+const esc = (t) => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ===================== BLO (halftone mascot) ===================== */
+const pointer = {x: innerWidth/2, y: innerHeight/2};
+addEventListener('pointermove', e => { pointer.x = e.clientX; pointer.y = e.clientY; pointer.moved = true; });
+document.documentElement.addEventListener('pointerleave', () => { pointer.moved = false; });
+const ripples = [];
+addEventListener('pointerdown', e => { ripples.push({x:e.clientX, y:e.clientY, t0:performance.now()}); if (ripples.length > 4) ripples.shift(); });
+
+function bgOf(el){
+  while (el){ const c = getComputedStyle(el).backgroundColor; if (c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') return c; el = el.parentElement; }
+  return getComputedStyle(document.documentElement).backgroundColor;
+}
+class Blo {
+  constructor(canvas, opt){
+    this.c = canvas; this.ctx = canvas.getContext('2d'); this.o = Object.assign({tone:'app', particles:false, expr:'default', grid:34, wide:1}, opt);
+    this.expr = this.o.expr; this.blinkAt = performance.now() + 2000 + Math.random()*3000; this.last = performance.now();
+    this.resize(); new ResizeObserver(() => this.resize()).observe(canvas);
+    this.kick = 0;
+    this.react = 0;
+    canvas.addEventListener('pointerenter', () => {
+      this.hover = true; this.kick = Math.max(this.kick, .9);
+      if (this.expr === 'thinking') return;
+      this.restExpr = this.expr; this.set(Blo.REACT[this.react++ % Blo.REACT.length]);
+    });
+    canvas.addEventListener('pointerleave', () => { this.hover = false; if (this.restExpr && this.expr !== 'thinking') this.set(this.restExpr); this.restExpr = null; });
+    canvas.addEventListener('pointerdown', () => { this.kick = 1; if (this.expr === 'thinking') return; if (!this.restExpr) this.restExpr = this.expr; this.set(Blo.REACT[this.react++ % Blo.REACT.length]); });
+    Blo.all.push(this);
+  }
+  resize(){
+    const r = this.c.getBoundingClientRect(); if (!r.width) return;
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    this.c.width = Math.round(r.width*dpr); this.c.height = Math.round(r.height*dpr);
+    this.W = r.width; this.H = r.height; this.dpr = dpr;
+    this.S = Math.min(this.H/0.92, this.W/this.o.wide); this.ox = (this.W - this.S)/2; this.oy = (this.H - this.S*0.9)/2;
+    this.build(); this.draw(performance.now());
+  }
+  colors(){
+    const ground = bgOf(this.c.parentElement);
+    let dot;
+    if (this.o.tone === 'night') dot = '#C6F24E';
+    else if (this.o.tone === 'mark') dot = getComputedStyle(document.documentElement).getPropertyValue('--accent-mark').trim();
+    else dot = getComputedStyle(document.documentElement).getPropertyValue('--text').trim();
+    return {ground, dot};
+  }
+  build(){
+    const n = this.o.grid, S = this.S, step = S/n; this.step = step; this.dots = [];
+    const e = (x,y,cx,cy,rx,ry) => ((x-cx)/rx)**2 + ((y-cy)/ry)**2;
+    for (let j=0;j<n;j++) for (let i=0;i<n;i++){
+      const x=(i+.5)/n, y=(j+.5)/n; if (y>.86) continue;
+      const v = Math.min(e(x,y,.5,.52,.47,.33), e(x,y,.40,.33,.27,.24), e(x,y,.64,.38,.24,.21));
+      if (v>1 || y>=.8) continue;
+      const lx=x-.32, ly=y-.25, light = 1 - Math.min(1, Math.hypot(lx,ly)/.75), core = 1 - v;
+      const k = Math.min(1, .3 + .4*light + .45*core);
+      this.dots.push({x:this.ox + x*S, y:this.oy + y*S, s:step*.96*k, ph:(x+y)*6});
+    }
+    this.parts = [];
+    if (this.o.particles){
+      let seed = 7; const rnd = () => (seed = (seed*9301+49297)%233280)/233280;
+      const count = Math.round(260*this.o.wide);
+      for (let p=0;p<count;p++){
+        const band = rnd();
+        this.parts.push({x: rnd()*this.W, y: this.oy + S*(.74 + band*.16) + Math.sin(rnd()*6)*S*.03, s: step*(.12+rnd()*.38), o: .15 + rnd()*.6, v: (rnd()-.3)*6, ph: rnd()*6});
+      }
+      for (let p=0;p<40;p++) this.parts.push({x: rnd()*this.W, y: rnd()*this.H*.7, s: step*(.08+rnd()*.15), o:.1+rnd()*.35, v:(rnd()-.5)*2, ph:rnd()*6, star:true});
+    }
+  }
+  set(expr){ if (expr !== this.expr) this.kick = 1; this.expr = expr; if (reduce) this.draw(performance.now()); }
+  draw(t){
+    const {ctx} = this; if (!this.dots) return;
+    const dt = Math.min(.05, (t - this.last)/1000); this.last = t;
+    const {ground, dot} = this.colors();
+    ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
+    ctx.clearRect(0,0,this.W,this.H);
+    ctx.fillStyle = dot;
+    const breathe = reduce ? 0 : .07;
+    this.kick = (this.kick || 0) * Math.pow(0.05, dt);
+    if (this.hover && !reduce) this.kick = Math.max(this.kick, .3);
+    if (!reduce && !this.o.noHop){ if (!this.nextHop) this.nextHop = t + 2000 + Math.random()*3000; if (t > this.nextHop){ this.kick = Math.max(this.kick, .75); this.nextHop = t + 4500 + Math.random()*4000; } }
+    const amp = reduce ? 0 : 1 + this.kick*3;
+    const cx = this.ox + this.S*.5, cy = this.oy + this.S*.5, ph = t/1000;
+    const hop = reduce ? 0 : -Math.abs(Math.sin(t/170))*this.kick*this.S*.07;
+    const bob = reduce ? 0 : Math.sin(ph*1.6)*this.S*.035 + hop;
+    const sq = reduce ? 0 : Math.sin(ph*3.2)*.035 + Math.sin(t/85)*.06*this.kick;
+    const sx = 1 + sq, sy = 1 - sq;
+    this.tf = {cx, cy, bob, sx, sy};
+    ctx.beginPath();
+    for (const d of this.dots){
+      const rx = d.x - cx, ry = d.y - cy, a = Math.atan2(ry, rx);
+      const w = 1 + (reduce ? 0 : (.03*Math.sin(3*a + ph*2.4) + .022*Math.sin(5*a - ph*3.1))*amp);
+      const x = cx + rx*sx*w, y = cy + ry*sy*w + bob;
+      const s = d.s * (1 + breathe*Math.sin(ph*1.8 + d.ph)) / 2;
+      ctx.moveTo(x + s, y); ctx.arc(x, y, s, 0, Math.PI*2);
+    }
+    ctx.fill();
+    for (const p of this.parts){
+      if (!reduce){ p.x += p.v*dt; if (p.x > this.W+4) p.x = -4; if (p.x < -4) p.x = this.W+4; }
+      ctx.globalAlpha = p.o * (p.star ? (.6 + .4*Math.sin(t/900 + p.ph)) : 1);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.s/2, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    this.face(t, ground, dot);
+  }
+  face(t, ground, dot){
+    const {ctx} = this, u = this.S/100;
+    ctx.save(); const tf = this.tf || {cx:0, cy:0, bob:0, sx:1, sy:1};
+    ctx.translate(tf.cx, tf.cy + tf.bob); ctx.scale(tf.sx, tf.sy); ctx.translate(-tf.cx, -tf.cy);
+    ctx.translate(this.ox, this.oy); ctx.scale(u,u);
+    const r = this.c.getBoundingClientRect();
+    let dx = 0, dy = 0;
+    if (!reduce){ dx = Math.max(-1,Math.min(1,(pointer.x - (r.left+r.width/2))/500))*1.6; dy = Math.max(-1,Math.min(1,(pointer.y - (r.top+r.height/2))/500))*1.1; }
+    let blink = 1;
+    if (!reduce){ const since = t - this.blinkAt; if (since > 0 && since < 140) blink = Math.abs(since-70)/70*0.9+0.1; if (since >= 140) this.blinkAt = t + 3500 + Math.random()*2500; }
+    ctx.fillStyle = ground; ctx.strokeStyle = ground; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const ell = (cx,cy,rx,ry) => { ctx.beginPath(); ctx.ellipse(cx+dx, cy+dy, rx, Math.max(.4, ry*blink), 0, 0, Math.PI*2); ctx.fill(); };
+    const path = (d, w, fill) => { ctx.save(); ctx.translate(dx*.6, dy*.6); const p = new Path2D(d); if (fill){ ctx.fill(p); } else { ctx.lineWidth = w; ctx.stroke(p); } ctx.restore(); };
+    const marks = () => { ctx.save(); ctx.strokeStyle = dot; ctx.lineWidth = 2.6; ctx.stroke(new Path2D('M86 12 L90 5 M89 19 L96 15')); ctx.restore(); };
+    const e = this.expr;
+    if (e === 'happy'){ path('M42.5 47 Q46 42.5 49.5 47',2.6); path('M60.5 45 Q64 40.5 67.5 45',2.6); path('M50 54 Q55 59.5 60 54',2.8); marks(); }
+    else if (e === 'proud'){ path('M42.5 46 Q46 49.5 49.5 46',2.6); path('M60.5 44 Q64 47.5 67.5 44',2.6); path('M50 54 Q55 59 60 54',2.8); marks(); }
+    else if (e === 'excited'){ ell(46,45,3.6,5.2); ell(64,43,3.6,5.4); path('M49.5 53 Q55 62 60.5 53 Z',1.5,true); marks(); }
+    else if (e === 'wink'){ path('M42.5 46.5 Q46 43 49.5 46.5',2.6); ell(64,44,3.2,4.8); path('M50 53.5 Q55 59.5 60 53.5',2.8); marks(); }
+    else if (e === 'surprised'){ ell(46,44,3.9,4.2); ell(64,42,3.9,4.3); path('M52.6 56.5 a2.4 2.9 0 1 0 4.8 0 a2.4 2.9 0 1 0 -4.8 0',1,true); marks(); }
+    else if (e === 'focused'){ path('M43 42.5 L48.5 46 L43 49.5',2.6); path('M67 40.5 L61.5 44 L67 47.5',2.6); path('M51.5 54 Q55 57 58.5 54',2.6); }
+    else if (e === 'thinking'){
+      ell(47,43,2.8,4); ell(65,41,2.8,4.2); path('M52 55.5 L57.5 55.5',2.6);
+      ctx.fillStyle = dot;
+      for (let i=0;i<3;i++){ const a = reduce ? 1 : .35 + .65*Math.max(0, Math.sin(t/220 - i*.9)); ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(44+i*8, 6, 1.9, 0, Math.PI*2); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    }
+    else { ell(46,46,3.2,4.6); ell(64,44,3.2,4.8); path('M50.5 54 Q55 58.5 59.5 54',2.8); }
+    ctx.restore();
+  }
+}
+Blo.all = [];
+Blo.REACT = ['excited','wink','surprised','proud'];
+
+/* ===================== MOVING DOT BACKGROUND ===================== */
+const bg = {
+  init(){ this.c = $('#bgfx'); this.ctx = this.c.getContext('2d'); addEventListener('resize', () => this.resize()); this.resize(); },
+  resize(){ const dpr = Math.min(2, devicePixelRatio || 1); this.dpr = dpr; this.W = innerWidth; this.H = innerHeight; this.c.width = Math.round(this.W*dpr); this.c.height = Math.round(this.H*dpr); this.draw(performance.now()); },
+  draw(t){
+    const ctx = this.ctx; if (!ctx) return;
+    const night = document.documentElement.dataset.view !== 'profile' && document.documentElement.dataset.view !== 'strategy' && document.documentElement.dataset.view !== 'prospects' && document.documentElement.dataset.view !== 'outreach';
+    const cs = getComputedStyle(document.documentElement);
+    const base = night ? '#34342F' : cs.getPropertyValue('--bg-grain').trim();
+    const hot = night ? '#55554F' : cs.getPropertyValue('--text-quiet').trim();
+    const gap = night ? 18 : 22;
+    ctx.setTransform(this.dpr,0,0,this.dpr,0,0); ctx.clearRect(0,0,this.W,this.H);
+    const T = reduce ? 0 : t/1000;
+    const offX = (T*8) % gap, offY = (T*4) % gap;
+    if (pointer.moved){ this.px = this.px == null || this.px < -500 ? pointer.x : this.px + (pointer.x - this.px)*.12; this.py = this.py == null || this.py < -500 ? pointer.y : this.py + (pointer.y - this.py)*.12; }
+    else { this.px = -999; this.py = -999; }
+    while (ripples.length && t - ripples[0].t0 > 1400) ripples.shift();
+    const R = 180, hotDots = [];
+    ctx.fillStyle = base; ctx.beginPath();
+    for (let y = -gap + offY; y < this.H + gap; y += gap){
+      for (let x = -gap + offX; x < this.W + gap; x += gap){
+        const wave = Math.sin(x*.009 + T*1.4) * Math.cos(y*.011 - T*1.1) + Math.sin((x + y)*.005 - T*.9)*.7;
+        let r = 1.1 + wave*.8, X = x, Y = y, heat = 0;
+        if (!reduce){
+          const dx = x - this.px, dy = y - this.py, d = Math.hypot(dx, dy);
+          if (d < R){ const f = 1 - d/R; r += f*f*3; X += dx/(d || 1)*f*12; Y += dy/(d || 1)*f*12; heat = f; }
+          for (const rp of ripples){ const age = t - rp.t0, rr = age*.55, dd = Math.abs(Math.hypot(x - rp.x, y - rp.y) - rr); if (dd < 34){ const k = (1 - dd/34)*(1 - age/1400); r += k*3; heat = Math.max(heat, k); } }
+        }
+        if (heat > .3){ hotDots.push(X, Y, r); continue; }
+        if (r < .3) continue;
+        ctx.moveTo(X + r, Y); ctx.arc(X, Y, r, 0, 6.2832);
+      }
+    }
+    ctx.fill();
+    if (hotDots.length){ ctx.fillStyle = hot; ctx.globalAlpha = night ? .9 : .75; ctx.beginPath(); for (let i = 0; i < hotDots.length; i += 3){ ctx.moveTo(hotDots[i] + hotDots[i+2], hotDots[i+1]); ctx.arc(hotDots[i], hotDots[i+1], hotDots[i+2], 0, 6.2832); } ctx.fill(); ctx.globalAlpha = 1; }
+  }
+};
+
+function loop(t){ bg.draw(t); if (cursorBlo){ cursorBlo.sync(); cursorBlo.follow(t); cursorBlo.draw(t); } Blo.all = Blo.all.filter(b => b.c.isConnected); for (const b of Blo.all){ if (b.c.offsetParent !== null) b.draw(t); } if (!reduce) requestAnimationFrame(loop); }
+
+/* ===================== HELPERS ===================== */
+const sleep = ms => new Promise(r => setTimeout(r, reduce ? Math.min(ms, 60) : ms));
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+function setAgent(expr, text){ mini.set(expr); $('#agent-status').textContent = text; }
+
+function emptyState(host, text, btnLabel, onClick, expr='default'){
+  host.innerHTML = `<div class="empty"><canvas aria-hidden="true"></canvas><p>${esc(text)}</p>${btnLabel ? `<button class="btn" type="button">${esc(btnLabel)}</button>` : ''}</div>`;
+  const b = new Blo($('canvas', host), {tone:'app', grid:26, expr});
+  if (btnLabel) $('button', host).onclick = onClick;
+  return b;
+}
+async function runAgent(host, lines, statusText){
+  state.running = true;
+  host.innerHTML = `<div class="empty"><canvas aria-hidden="true"></canvas><div class="log" role="log" aria-label="Agent activity"></div></div>`;
+  const b = new Blo($('canvas', host), {tone:'app', grid:26, expr:'thinking'});
+  setAgent('thinking', statusText);
+  const log = $('.log', host);
+  for (let i=0;i<lines.length;i++){
+    const row = document.createElement('div'); row.innerHTML = `<i>○</i><span>${esc(lines[i])}</span>`; log.appendChild(row);
+    if (i === Math.floor(lines.length/2)) b.set('focused');
+    await sleep(520 + Math.random()*260);
+    row.classList.add('done'); row.querySelector('i').textContent = '●';
+  }
+  b.set('happy'); await sleep(380);
+  Blo.all.splice(Blo.all.indexOf(b), 1);
+  state.running = false;
+}
+function markDone(){
+  for (const k of ['profile','strategy','prospects','outreach']){
+    const flag = {profile:state.profiled, strategy:state.approved, prospects:state.prospected, outreach:state.outreach}[k];
+    $(`.tab[data-tab="${k}"]`).classList.toggle('is-done', !!flag);
+  }
+}
+function resetFrom(step){
+  if (step <= 0){ state.profiled = false; }
+  if (step <= 1){ state.strategy = false; state.approved = false; state.icp = null; state.segOn = [true,true,true]; }
+  if (step <= 2){ state.prospected = false; state.selected = new Set(); state.filters = {q:'',seg:'all',min:0}; }
+  if (step <= 3){ state.outreach = false; state.current = null; state.status = {}; state.variant = {}; state.drafts = {}; }
+  markDone();
+}
+
+/* ===================== 01 PROFILE ===================== */
+function fillForm(){
+  const i = S().input;
+  $('#i-co').value = i.co; $('#i-web').value = i.web; $('#i-what').value = i.what; $('#i-prob').value = i.prob; $('#i-geo').value = i.geo; $('#i-goal').value = i.goal;
+  $('#project-pill').textContent = S().label;
+}
+function renderProfile(){
+  const host = $('#profile-out');
+  if (!state.profiled){ emptyState(host, 'Describe what you sell on the left, and Markit builds the business profile here.'); return; }
+  const p = S();
+  host.innerHTML = `<div class="reveal" style="padding:28px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><h2 style="margin:0;font-weight:400;font-size:26px;letter-spacing:-.02em">Business profile</h2><span class="label">Editable</span></div>
+    <dl class="kv">${p.profile.map(([k,v]) => `<dt class="label">${esc(k)}</dt><dd contenteditable="true" spellcheck="false">${esc(v)}</dd>`).join('')}</dl>
+    <div class="dotline" style="padding-top:14px;font-size:13px;line-height:1.55"><strong style="font-weight:500">Assumed by Markit:</strong> <span contenteditable="true">${esc(p.assume)}</span></div>
+    <button class="btn" type="button" id="b-to-strategy" style="align-self:flex-start">Looks right, build my strategy</button>
+  </div>`;
+  $('#b-to-strategy').onclick = () => { location.hash = 'strategy'; buildStrategy(); };
+}
+$('#f-profile').addEventListener('submit', async e => {
+  e.preventDefault(); if (state.running) return;
+  if (!$('#i-what').value.trim()){ $('#f-err').hidden = false; $('#i-what').focus(); return; }
+  $('#f-err').hidden = true;
+  resetFrom(0);
+  await runAgent($('#profile-out'), ['Reading your description','Working out what you sell and who pays','Estimating deal size and sales cycle','Flagging assumptions for you to confirm'], 'Building profile');
+  state.profiled = true; markDone(); renderProfile(); setAgent('happy','Profile ready');
+});
+$('#i-what').addEventListener('input', () => { $('#f-err').hidden = true; });
+document.querySelectorAll('.ex').forEach(b => b.onclick = () => {
+  if (state.running) return;
+  state.scen = b.dataset.ex;
+  document.querySelectorAll('.ex').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  resetFrom(0); fillForm(); renderProfile(); setAgent('default','Ready');
+  toast(`Loaded the ${S().label} example`);
+});
+
+/* ===================== 02 STRATEGY ===================== */
+async function buildStrategy(){
+  if (state.running) return;
+  resetFrom(1);
+  $('#strat-actions').hidden = true;
+  await runAgent($('#strategy-out'), ['Reasoning back from the product to who has a reason to buy','Ranking customer segments','Defining buying signals and decision-makers','Checking the market with web search','ICP draft ready for your approval'], 'Building strategy');
+  state.strategy = true; state.icp = JSON.parse(JSON.stringify(S().icp));
+  renderStrategy(); setAgent('happy','Strategy drafted');
+}
+function renderStrategy(){
+  const host = $('#strategy-out');
+  if (!state.profiled){ $('#strat-actions').hidden = true; emptyState(host, 'Markit needs a business profile before it can work out who to sell to.', 'Go to profile', () => location.hash = 'profile'); return; }
+  if (!state.strategy){ $('#strat-actions').hidden = true; emptyState(host, 'Your profile is ready. Markit will reason from it to an ideal customer profile.', 'Build my strategy', buildStrategy); return; }
+  const p = S();
+  $('#strat-actions').hidden = false;
+  $('#b-approve').hidden = state.approved; $('#b-find').hidden = !state.approved;
+  host.innerHTML = `<div class="reveal" style="display:flex;flex-direction:column;gap:28px">
+    <section aria-labelledby="h-segs" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><h2 id="h-segs" style="margin:0;font-weight:400;font-size:22px">Customer segments, ranked</h2><span class="note">Click to include or leave out</span></div>
+      <div class="segs">${p.segments.map((s,i) => `<button class="seg" type="button" data-seg="${i}" aria-pressed="${state.segOn[i]}"><span class="top"><span class="label">Segment ${i+1}${i===0?', priority':''}</span><span class="label">${state.segOn[i]?'Included':'Left out'}</span></span><strong>${esc(s.name)}</strong><span class="p">${esc(s.why)}</span></button>`).join('')}</div>
+    </section>
+    <section class="panel" aria-labelledby="h-icp" style="padding:8px 24px 20px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:16px 0 8px"><h2 id="h-icp" style="margin:0;font-weight:400;font-size:22px">Ideal customer profile</h2><span class="label" style="${state.approved?'color:var(--text)':''}">${state.approved?'● Approved':'Draft, not approved'}</span></div>
+      ${Object.entries(state.icp).map(([k,vals]) => `<div class="icp-row"><span class="label" style="padding-top:6px">${esc(k)}</span><div class="chips">${vals.map((v,j) => `<span class="chip ${k==='Buying signals'?'found':''}">${esc(v)}<button type="button" aria-label="Remove ${esc(v)}" data-k="${esc(k)}" data-j="${j}">×</button></span>`).join('')}<input class="add" data-k="${esc(k)}" placeholder="+ Add" aria-label="Add to ${esc(k)}"></div></div>`).join('')}
+      <p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:var(--text-muted)"><strong style="font-weight:500;color:var(--text)">Why this ICP:</strong> ${esc(p.why)}</p>
+    </section>
+    <section aria-labelledby="h-intel" style="display:flex;flex-direction:column;gap:16px">
+      <h2 id="h-intel" style="margin:0;font-weight:400;font-size:22px">Market intelligence</h2>
+      <div class="intel">${p.intel.map(([k,v,s]) => `<div><span class="label">${esc(k)}</span><span>${esc(v)}</span><span class="src">${esc(s)} ↗</span></div>`).join('')}</div>
+    </section>
+  </div>`;
+  host.querySelectorAll('.seg').forEach(b => b.onclick = () => { const i = +b.dataset.seg; state.segOn[i] = !state.segOn[i]; unapprove(); renderStrategy(); });
+  host.querySelectorAll('.chip button').forEach(b => b.onclick = () => { state.icp[b.dataset.k].splice(+b.dataset.j,1); unapprove(); renderStrategy(); });
+  host.querySelectorAll('.add').forEach(inp => inp.onkeydown = e => { if (e.key === 'Enter' && inp.value.trim()){ e.preventDefault(); state.icp[inp.dataset.k].push(inp.value.trim()); unapprove(); renderStrategy(); const again = host.querySelector(`.add[data-k="${CSS.escape(inp.dataset.k)}"]`); again && again.focus(); } });
+}
+function unapprove(){ if (state.approved){ state.approved = false; resetFrom(2); toast('ICP changed. Approve it again to search.'); } }
+$('#b-approve').onclick = () => { state.approved = true; markDone(); renderStrategy(); setAgent('happy','ICP approved'); toast('ICP approved'); $('#b-find').focus(); };
+$('#b-regen-icp').onclick = buildStrategy;
+$('#b-find').onclick = () => { location.hash = 'prospects'; findProspects(); };
+
+/* ===================== 03 PROSPECTS ===================== */
+const segName = p => S().segments[p.seg].name;
+async function findProspects(){
+  if (state.running) return;
+  resetFrom(2);
+  await runAgent($('#prospects-out'), ['Turning the ICP into search filters','Crustdata Company Search: matching companies','Crustdata Company Enrich: size, funding, growth','Crustdata Job Search: hiring signals','Scoring each company with its evidence',`Ranked ${visibleProspects(true).length} companies`], 'Searching companies');
+  state.prospected = true;
+  visibleProspects(true).filter(p => p.score >= 75).forEach(p => state.selected.add(p.id));
+  markDone(); renderProspects(true);
+  const top = visibleProspects(true)[0];
+  setAgent(top && top.score >= 80 ? 'excited' : 'happy', 'Prospects ranked');
+}
+function visibleProspects(all){
+  let list = S().prospects.filter(p => state.segOn[p.seg]).sort((a,b) => b.score - a.score);
+  if (all) return list;
+  const f = state.filters;
+  return list.filter(p => (f.seg === 'all' || String(p.seg) === f.seg) && p.score >= f.min && (!f.q || (p.name + ' ' + p.city + ' ' + p.signals.join(' ')).toLowerCase().includes(f.q.toLowerCase())));
+}
+function renderProspects(animate){
+  const host = $('#prospects-out');
+  if (!state.approved){ emptyState(host, 'No prospects yet. Approve your ICP to start the search.', 'Go to strategy', () => location.hash = 'strategy'); return; }
+  if (!state.prospected){ emptyState(host, 'Your ICP is approved. Markit will search Crustdata for companies that match it.', 'Find companies', findProspects); return; }
+  const f = state.filters;
+  host.innerHTML = `<div class="reveal" style="display:flex;flex-direction:column;gap:16px">
+    <div class="toolbar">
+      <label class="sr" for="p-q">Search companies</label><input class="inp" id="p-q" placeholder="Search companies or signals" value="${esc(f.q)}" style="flex:1 1 240px">
+      <label class="sr" for="p-seg">Segment</label><select class="inp" id="p-seg"><option value="all">All segments</option>${S().segments.map((s,i) => state.segOn[i] ? `<option value="${i}" ${f.seg===String(i)?'selected':''}>${esc(s.name)}</option>` : '').join('')}</select>
+      <div class="range"><label for="p-min">Min fit</label><input type="range" id="p-min" min="0" max="90" step="5" value="${f.min}"><span id="p-min-v" style="font-family:var(--mono);min-width:2ch">${f.min}</span></div>
+    </div>
+    <div class="panel tablebox"><table>
+      <caption class="sr">Ranked prospects</caption>
+      <thead><tr><th><span class="sr">Select</span></th><th>Company</th><th>Fit</th><th>Why relevant</th><th>Signals</th><th>Missing</th></tr></thead>
+      <tbody id="p-body"></tbody>
+    </table></div>
+    <p class="note" style="margin:0">Sample companies for the prototype. In the live build these come from Crustdata.</p>
+    <div class="panel selbar"><span id="p-count" style="font-size:14px"></span><button class="btn" type="button" id="b-dm">Find decision-makers</button></div>
+  </div>`;
+  const body = $('#p-body');
+  const draw = () => {
+    const list = visibleProspects(false);
+    body.innerHTML = list.length ? list.map(p => `<tr data-id="${p.id}" class="${state.selected.has(p.id)?'sel':''}">
+      <td><input class="cbx" type="checkbox" aria-label="Select ${esc(p.name)}" ${state.selected.has(p.id)?'checked':''}></td>
+      <td><div class="co">${esc(p.name)}</div><div class="meta">${esc(segName(p))}, ${esc(p.city)}, ${esc(p.staff)} staff</div></td>
+      <td><div class="score">${p.score}</div><div class="bar"><span style="width:${animate?0:p.score}%" data-w="${p.score}"></span></div></td>
+      <td style="max-width:300px">${esc(p.why)}</td>
+      <td><div class="sigs">${p.signals.map(s => `<span class="chip ${s.startsWith('No ')?'':'found'}">${esc(s)}</span>`).join('')}</div></td>
+      <td class="meta">${esc(p.missing)}</td></tr>`).join('')
+      : `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">No companies match these filters. Lower the minimum fit or clear the search.</td></tr>`;
+    if (animate){ requestAnimationFrame(() => body.querySelectorAll('.bar span').forEach(s => s.style.width = s.dataset.w + '%')); animate = false; }
+    body.querySelectorAll('tr[data-id]').forEach(tr => {
+      const id = tr.dataset.id, cb = $('.cbx', tr);
+      cb.onclick = e => { e.stopPropagation(); cb.checked ? state.selected.add(id) : state.selected.delete(id); tr.classList.toggle('sel', cb.checked); count(); resetFrom(3); };
+      tr.onclick = () => openDrawer(id);
+    });
+    count();
+  };
+  const count = () => { const n = state.selected.size; $('#p-count').innerHTML = `<strong style="font-weight:500">${n}</strong> of ${visibleProspects(true).length} selected for outreach`; $('#b-dm').disabled = n === 0; $('#b-dm').textContent = n ? `Find decision-makers for ${n}` : 'Select companies first'; };
+  $('#p-q').oninput = e => { f.q = e.target.value; draw(); };
+  $('#p-seg').onchange = e => { f.seg = e.target.value; draw(); };
+  $('#p-min').oninput = e => { f.min = +e.target.value; $('#p-min-v').textContent = f.min; draw(); };
+  $('#b-dm').onclick = () => { location.hash = 'outreach'; findPeople(); };
+  draw();
+}
+let lastFocus;
+function openDrawer(id){
+  const p = S().prospects.find(x => x.id === id), d = $('#drawer'); lastFocus = document.activeElement;
+  const sel = state.selected.has(id);
+  d.innerHTML = `<button class="x" type="button" id="d-x" aria-label="Close evidence">×</button>
+    <div style="display:flex;flex-direction:column;gap:8px"><span class="label">${esc(segName(p))}, ${esc(p.city)}</span><h2 id="d-title">${esc(p.name)}</h2>
+    <div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:var(--mono);font-size:40px;font-weight:500;line-height:1">${p.score}</span><span class="note">fit score out of 100</span></div></div>
+    <p style="margin:0;font-size:14px;line-height:1.6">${esc(p.why)}</p>
+    <div class="bd">${BD_LABELS.map(([l,max],i) => `<div class="bd-row"><span>${l}</span><b>${p.bd[i]}/${max}</b><div class="track"><span data-w="${p.bd[i]/max*100}"></span></div></div>`).join('')}</div>
+    <div class="ev"><span class="label">Evidence</span>${p.ev.map(([t,s]) => `<div><span>${esc(t)}</span><span class="src">${esc(s)} ↗</span></div>`).join('')}
+    <div style="color:var(--text-muted)"><span>Missing: ${esc(p.missing)}. Not found, not guessed.</span></div></div>
+    <button class="btn ${sel?'sec':''}" type="button" id="d-sel" style="margin-top:auto">${sel?'Remove from outreach':'Add to outreach'}</button>`;
+  d.classList.add('open'); d.setAttribute('aria-hidden','false'); $('#scrim').classList.add('open');
+  requestAnimationFrame(() => requestAnimationFrame(() => d.querySelectorAll('.track span').forEach(s => s.style.width = s.dataset.w + '%')));
+  $('#d-x').focus();
+  $('#d-x').onclick = closeDrawer;
+  $('#d-sel').onclick = () => { sel ? state.selected.delete(id) : state.selected.add(id); resetFrom(3); closeDrawer(); renderProspects(false); toast(sel ? `${p.name} removed` : `${p.name} added to outreach`); };
+}
+function closeDrawer(){ const d = $('#drawer'); d.classList.remove('open'); d.setAttribute('aria-hidden','true'); $('#scrim').classList.remove('open'); lastFocus && lastFocus.focus && lastFocus.focus(); }
+$('#scrim').onclick = closeDrawer;
+$('#drawer').addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+/* ===================== 04 OUTREACH ===================== */
+function chosen(){ return S().prospects.filter(p => state.selected.has(p.id) && state.segOn[p.seg]).sort((a,b) => b.score - a.score); }
+function draft(p){
+  if (state.drafts[p.id]) return state.drafts[p.id];
+  const first = p.contact.name.split(' ')[0], v = state.variant[p.id] || 0, s = S();
+  const body = v % 2 === 0
+    ? `Hi ${first},\n\n${p.hook} ${p.pain}\n\n${s.pitch} [One line of proof: a customer result.]\n\nWould a 20-minute call next week be useful to see if it fits?\n\n[Your name]`
+    : `Hi ${first},\n\n${p.pain} ${p.hook}\n\n${s.pitch2} [Proof point.]\n\nOpen to a short call to see if the numbers work for you?\n\n[Your name]`;
+  return {subject: v % 2 === 0 ? p.subject : 'Quick question, ' + first, body};
+}
+async function findPeople(){
+  if (state.running) return;
+  if (!chosen().length){ renderOutreach(); return; }
+  resetFrom(3); $('#out-actions').hidden = true;
+  await runAgent($('#outreach-out'), ['Crustdata Person Search: finding decision-makers','Crustdata Person Enrich: checking they’re still in role','Writing each email from evidence only','Checking every claim against its source',`${chosen().length} emails prepared`], 'Writing emails');
+  state.outreach = true; chosen().forEach(p => state.status[p.id] = 'Prepared'); state.current = chosen()[0].id;
+  markDone(); renderOutreach(); setAgent('happy','Emails prepared');
+}
+function renderOutreach(){
+  const host = $('#outreach-out');
+  if (!state.prospected || !chosen().length){ $('#out-actions').hidden = true; emptyState(host, 'Select at least one company on the prospects step, then Markit finds the person to contact.', 'Go to prospects', () => location.hash = 'prospects'); return; }
+  if (!state.outreach){ $('#out-actions').hidden = true; emptyState(host, `${chosen().length} companies selected. Markit will find the decision-maker at each and draft an email.`, 'Find decision-makers', findPeople); return; }
+  $('#out-actions').hidden = false;
+  const list = chosen(); if (!list.find(p => p.id === state.current)) state.current = list[0].id;
+  const p = list.find(x => x.id === state.current), c = p.contact, d = draft(p), st = state.status[p.id];
+  const claims = p.ev.length;
+  host.innerHTML = `<div class="out reveal">
+    <nav class="panel contacts" aria-label="Contacts">${list.map(x => `<button class="ct" type="button" data-id="${x.id}" aria-current="${x.id===p.id}">
+      <span class="nm"><span>${esc(x.contact.name)}</span><span class="status ${state.status[x.id]==='Approved'?'ap':''}">${esc(state.status[x.id])}</span></span>
+      <span class="meta">${esc(x.contact.title)}, ${esc(x.name)}</span></button>`).join('')}</nav>
+    <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+      <div class="panel editor">
+        <div class="to"><span class="label">To</span><strong style="font-weight:500">${esc(c.name)}</strong><span class="meta">${esc(c.title)}, ${esc(p.name)}</span>
+          <span class="meta" style="font-family:var(--mono)">${c.email ? esc(c.email) : 'Email not found. Not guessed.'}</span></div>
+        <div class="field"><label class="label" for="e-sub">Subject</label><input class="inp" id="e-sub" value="${esc(d.subject)}"></div>
+        <div class="field"><label class="label" for="e-body">Email</label><textarea class="inp" id="e-body" rows="12">${esc(d.body)}</textarea></div>
+        <div class="check">● <span><strong style="font-weight:500">${claims} of ${claims} claims backed by sources.</strong> Text in brackets is for you to fill in.</span></div>
+        ${p.removed ? `<div class="check bad"><span><strong>✕ 1 claim removed by the checker:</strong> ${esc(p.removed)}</span></div>` : ''}
+        <div class="actions">
+          <button class="btn sec" type="button" id="b-regen">Regenerate</button>
+          <button class="btn ${st==='Approved'?'ok':''}" type="button" id="b-ok">${st==='Approved'?'✓ Approved':'Approve email'}</button>
+          ${c.email ? '' : '<span class="note" style="align-self:center">No email found. Export includes the LinkedIn profile instead.</span>'}
+        </div>
+      </div>
+      <div class="panel why"><span class="label">Why ${esc(p.name)}, why now</span>
+        <p style="margin:0;font-size:14px;line-height:1.6">${esc(p.why)} ${esc(c.name.split(' ')[0])} is the right person: ${esc(c.role.toLowerCase())}.</p>
+        <div class="ev">${p.ev.map(([t,s]) => `<div><span>${esc(t)}</span><span class="src">${esc(s)} ↗</span></div>`).join('')}<div><span class="meta">Still in role, confirmed</span><span class="src">Crustdata · Person Enrich ↗</span></div></div>
+      </div>
+    </div></div>`;
+  host.querySelectorAll('.ct').forEach(b => b.onclick = () => { saveDraft(p); state.current = b.dataset.id; renderOutreach(); host.querySelector(`.ct[data-id="${b.dataset.id}"]`).focus(); });
+  $('#e-sub').oninput = $('#e-body').oninput = () => { saveDraft(p); if (state.status[p.id] === 'Approved'){ state.status[p.id] = 'Prepared'; const ok = $('#b-ok'); ok.className = 'btn'; ok.textContent = 'Approve email'; host.querySelector(`.ct[data-id="${p.id}"] .status`).className = 'status'; host.querySelector(`.ct[data-id="${p.id}"] .status`).textContent = 'Prepared'; } };
+  $('#b-ok').onclick = () => { saveDraft(p); state.status[p.id] = 'Approved'; updateProud(); const next = list.find(x => state.status[x.id] !== 'Approved'); toast(`Email to ${c.name} approved`); if (next){ state.current = next.id; } renderOutreach(); };
+  $('#b-regen').onclick = async () => {
+    delete state.drafts[p.id]; state.variant[p.id] = (state.variant[p.id] || 0) + 1; state.status[p.id] = 'Prepared';
+    const nd = draft(p), ta = $('#e-body'); $('#e-sub').value = nd.subject; setAgent('thinking','Rewriting');
+    if (reduce){ ta.value = nd.body; } else { ta.value = ''; for (let i=0;i<nd.body.length;i+=4){ ta.value = nd.body.slice(0,i+4); await new Promise(r => setTimeout(r, 8)); } }
+    saveDraft(p); setAgent('happy','Email rewritten'); renderOutreach();
+  };
+}
+function saveDraft(p){ const s = $('#e-sub'), b = $('#e-body'); if (s && b) state.drafts[p.id] = {subject:s.value, body:b.value}; }
+function updateProud(){ const list = chosen(); if (list.length && list.every(p => state.status[p.id] === 'Approved')){ setAgent('proud','Queue approved'); } }
+$('#b-approve-all').onclick = () => { const cur = chosen().find(p => p.id === state.current); cur && saveDraft(cur); chosen().forEach(p => state.status[p.id] = 'Approved'); renderOutreach(); updateProud(); toast(`${chosen().length} emails approved`); };
+$('#b-export').onclick = async () => {
+  const cur = chosen().find(p => p.id === state.current); cur && saveDraft(cur);
+  const ok = chosen().filter(p => state.status[p.id] === 'Approved');
+  if (!ok.length){ toast('Approve at least one email first'); return; }
+  const rows = [['Company','Name','Title','Email','Subject','Body']].concat(ok.map(p => { const d = draft(p); return [p.name,p.contact.name,p.contact.title,p.contact.email||'not found',d.subject,d.body]; }));
+  const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+  try { await navigator.clipboard.writeText(csv); toast(`${ok.length} approved emails copied as CSV. Status stays Prepared until sent.`); }
+  catch { toast(`${ok.length} approved emails ready to export`); }
+};
+
+/* ===================== ROUTER ===================== */
+const VIEWS = ['home','profile','strategy','prospects','outreach'];
+function route(){
+  let v = location.hash.replace('#','');
+  if (v === 'how'){ show('home'); setTimeout(() => $('#how').scrollIntoView({behavior: reduce ? 'auto' : 'smooth'}), 30); return; }
+  if (!VIEWS.includes(v)) v = 'home';
+  show(v);
+}
+function show(v){
+  closeDrawer();
+  document.documentElement.dataset.view = v;
+  if (cursorBlo) cursorBlo.o.tone = v === 'home' ? 'night' : 'mark';
+  $('#v-home').classList.toggle('on', v === 'home');
+  $('#app').hidden = v === 'home';
+  ['profile','strategy','prospects','outreach'].forEach(k => {
+    $('#v-' + k).classList.toggle('on', k === v);
+    const t = $(`.tab[data-tab="${k}"]`); k === v ? t.setAttribute('aria-current','page') : t.removeAttribute('aria-current');
+  });
+  if (!state.running){
+    if (v === 'profile') renderProfile();
+    if (v === 'strategy') renderStrategy();
+    if (v === 'prospects') renderProspects(false);
+    if (v === 'outreach') renderOutreach();
+  }
+  window.scrollTo(0,0);
+  requestAnimationFrame(() => { Blo.all.forEach(b => b.resize()); bg.draw(performance.now()); });
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', e => { if (state.running){ e.preventDefault(); toast('Markit is working. One moment.'); } }));
+
+/* ===================== INIT ===================== */
+const hero = new Blo($('#blo-hero'), {tone:'night', particles:true, grid:36, expr:'happy', wide:1.8});
+const mini = new Blo($('#blo-mini'), {tone:'mark', grid:18, expr:'default'});
+/* ===================== BLO CURSOR ===================== */
+let cursorBlo = null;
+if (matchMedia('(pointer: fine)').matches){
+  document.documentElement.classList.add('blo-cursor');
+  const wrap = document.createElement('div'); wrap.id = 'cur'; wrap.setAttribute('aria-hidden','true'); wrap.innerHTML = '<canvas></canvas>'; document.body.appendChild(wrap);
+  const tip = document.createElement('div'); tip.id = 'cur-tip'; tip.setAttribute('aria-hidden','true'); document.body.appendChild(tip);
+  cursorBlo = new Blo($('canvas', wrap), {tone:'night', grid:16, noHop:true});
+  const cur = {x: pointer.x, y: pointer.y, vx: 0, vy: 0};
+  let hoverExpr = 'default';
+  cursorBlo.follow = () => {
+    const tx = pointer.x + 12, ty = pointer.y + 14;
+    if (reduce){ cur.x = tx; cur.y = ty; }
+    else { cur.vx += (tx - cur.x)*.2; cur.vy += (ty - cur.y)*.2; cur.vx *= .6; cur.vy *= .6; cur.x += cur.vx; cur.y += cur.vy; }
+    const tilt = reduce ? 0 : Math.max(-20, Math.min(20, cur.vx*1.4));
+    wrap.style.transform = `translate(${cur.x}px, ${cur.y}px) rotate(${tilt}deg)`;
+    tip.style.transform = `translate(${pointer.x}px, ${pointer.y}px)`;
+    wrap.style.opacity = tip.style.opacity = pointer.moved ? '1' : '0';
+  };
+  cursorBlo.sync = () => {
+    if (state.running && cursorBlo.expr !== 'thinking') cursorBlo.set('thinking');
+    else if (!state.running && cursorBlo.expr === 'thinking') cursorBlo.set(hoverExpr);
+  };
+  addEventListener('pointerover', e => {
+    const t = e.target; if (!t.closest) return;
+    const typing = t.closest('input:not([type="checkbox"]):not([type="range"]), textarea, [contenteditable="true"]');
+    document.documentElement.classList.toggle('cur-text', !!typing);
+    hoverExpr = t.closest('a, button, select, input[type="checkbox"], input[type="range"], tr[data-id], canvas') ? 'happy' : 'default';
+    if (!state.running) cursorBlo.set(hoverExpr);
+  });
+  addEventListener('pointerdown', () => { cursorBlo.kick = 1; if (!state.running) cursorBlo.set('excited'); });
+  addEventListener('pointerup', () => { if (!state.running) cursorBlo.set(hoverExpr); });
+  if (reduce) addEventListener('pointermove', () => { const n = performance.now(); cursorBlo.sync(); cursorBlo.follow(n); cursorBlo.draw(n); });
+}
+
+bg.init();
+fillForm();
+addEventListener('hashchange', route);
+route();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
