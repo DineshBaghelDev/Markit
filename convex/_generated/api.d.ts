@@ -14,6 +14,7 @@ import type * as drafts from "../drafts.js";
 import type * as health from "../health.js";
 import type * as projects from "../projects.js";
 import type * as rateLimits from "../rateLimits.js";
+import type * as runState from "../runState.js";
 
 import type {
   ApiFromModules,
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   health: typeof health;
   projects: typeof projects;
   rateLimits: typeof rateLimits;
+  runState: typeof runState;
 }>;
 
 /**
