@@ -51,3 +51,10 @@ Record checks actually performed, findings, and limitations here. Keep entries d
 - Ran: tsc and eslint (clean), `npm test` (10 passed), `next build` (success). Headless-Chrome screenshots (dark mode) of /new and all four tabs of the VoltGrid and AuditPilot projects were reviewed after the fixes.
 - Not exercised end to end in the browser: document upload, autopilot run, email lookup and Gmail sending. The UI calls the routes, but no live run was triggered from the new screens.
 
+
+## 2026-10-31 Demo replay verification
+
+- Recorded the VoltGrid (UAE BESS) path through the new UI flow: example input, approve ICP, Select top 5, Find decision-makers (top person per company), Draft outreach. Live timings: strategy 65 s, discovery 269 s, people 38 s, drafts 94 s.
+- Replayed with DEMO_CACHE=on and DEMO_STEP_DELAY=on: by API with the LLM server offline (11 s, 10 s, 6 s, 8 s), and by driving the real UI in headless Chrome (profile 6.3 s, prospects 4.9 s, people 7.2 s, drafts 5.9 s, 5 emails, no errors).
+- Vercel: the demo cache is not deployed (git-ignored, contains real lead data), so Vercel runs live. Cache writes there used to fail drafts (read-only filesystem); recording is now best-effort.
+- Not verified: Gmail sending, autopilot and document upload from the new screens; anything on the Vercel deployment after this fix.
