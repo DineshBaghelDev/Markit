@@ -13,7 +13,7 @@ describe("environment configuration", () => {
   });
 
   it("reports a missing credential by name without exposing its value", () => {
-    vi.stubEnv("OPENAI_API_KEY", "");
-    expect(() => requireServerEnv("OPENAI_API_KEY")).toThrow("Missing required environment variable: OPENAI_API_KEY");
+    vi.stubEnv("CRUSTDATA_API_KEY", "");
+    expect(() => requireServerEnv("CRUSTDATA_API_KEY")).toThrow("Missing required environment variable: CRUSTDATA_API_KEY");
   });
 });

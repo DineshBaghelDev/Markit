@@ -11,10 +11,13 @@ export const publicEnvSchema = z.object({
 });
 
 // Validate credentials when an integration is used, not during an unrelated build.
-export function requireServerEnv(
-  name: "OPENAI_API_KEY" | "OPENAI_MODEL" | "CRUSTDATA_API_KEY",
-): string {
+export function requireServerEnv(name: "CRUSTDATA_API_KEY"): string {
   const result = requiredSecret.safeParse(process.env[name]);
   if (!result.success) throw new Error(`Missing required environment variable: ${name}`);
   return result.data;
+}
+
+// AI Gateway model string ("provider/model"). Gateway auth comes from AI_GATEWAY_API_KEY or Vercel OIDC.
+export function aiModel(): string {
+  return process.env.AI_MODEL?.trim() || "openai/gpt-5-mini";
 }
