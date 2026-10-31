@@ -4,6 +4,7 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { api } from "../../../convex/_generated/api";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
 import type { ParsedBusinessInput } from "@/lib/schemas";
+import { draftTargets } from "@/lib/draft-targets";
 
 // Guided example: when the "Use example" input arrives unchanged, each step replays the matching result from a
 // completed template project stored in Convex (so it also works on Vercel), after a short pause that lets the
@@ -47,19 +48,23 @@ export async function replayContacts(project: Doc<"projects">) {
       profileUrl: c.profileUrl, emailStatus: "not_enriched" as const, relevance: c.relevance, source: c.source,
     }));
   });
+  if (!contacts.length) {
+    const recorded = theirs.filter((t) => theirContacts.some((c) => c.companyId === t._id)).map((t) => t.name);
+    throw new Error(`The recorded example has decision-makers only for ${recorded.join(", ")}. Select one of those to continue.`);
+  }
   await fetchMutation(api.contacts.replaceForProject, { projectId: project._id, contacts });
   return contacts.length;
 }
 
 export async function replayDrafts(project: Doc<"projects">, contactId?: string) {
   const templateId = project.demoOf!;
-  const [mine, theirContacts, theirDrafts] = await Promise.all([
+  const [mine, myDrafts, theirContacts, theirDrafts] = await Promise.all([
     fetchQuery(api.contacts.listByProject, { projectId: project._id }),
+    fetchQuery(api.drafts.listByProject, { projectId: project._id }),
     fetchQuery(api.contacts.listByProject, { projectId: templateId }),
     fetchQuery(api.drafts.listByProject, { projectId: templateId }),
   ]);
-  const targets = mine.filter((c) => (contactId ? c._id === contactId : c.selected));
-  if (!targets.length) throw new Error("Select at least one contact.");
+  const targets = draftTargets(mine, myDrafts, contactId);
   let count = 0;
   for (const contact of targets) {
     const twin = theirContacts.find((c) => c.crustdataPersonId === contact.crustdataPersonId);

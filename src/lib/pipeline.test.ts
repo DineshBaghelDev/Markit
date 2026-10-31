@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCompanyQueries, dedupeCompanies, MIN_EMPLOYEES_FLOOR } from "./crustdata-filters";
 import { claimMatchesValue, scoreQualification } from "./scoring";
+import { draftTargets } from "./draft-targets";
 
 describe("buildCompanyQueries", () => {
   it("uses semantic search per segment with shared geography and headcount bounds", () => {
@@ -81,5 +82,20 @@ describe("claimMatchesValue", () => {
   it("rejects claims whose numbers are not in the cited value", () => {
     expect(claimMatchesValue("Raised funding in 2024", "2025-02-12")).toBe(false);
     expect(claimMatchesValue("Headcount of 500", 74)).toBe(false);
+  });
+});
+
+describe("draftTargets", () => {
+  const contacts = [{ _id: "a", selected: true }, { _id: "b", selected: true }, { _id: "c", selected: false }];
+
+  it("skips contacts whose email was already sent", () => {
+    expect(draftTargets(contacts, [{ contactId: "a", status: "sent" }, { contactId: "b", status: "approved" }]).map((c) => c._id)).toEqual(["b"]);
+  });
+
+  it("explains when nothing can be drafted", () => {
+    const sent = [{ contactId: "a", status: "sent" }, { contactId: "b", status: "sent" }];
+    expect(() => draftTargets(contacts, sent)).toThrow("already been emailed");
+    expect(() => draftTargets(contacts, sent, "a")).toThrow("already sent");
+    expect(() => draftTargets([], [])).toThrow("Select at least one contact");
   });
 });

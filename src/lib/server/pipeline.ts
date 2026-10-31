@@ -5,6 +5,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { buildCompanyQueries, buildPeopleAtCompanyQuery, dedupeCompanies } from "@/lib/crustdata-filters";
 import { parseStoredIcp, parseStoredProfile, type ParsedBusinessInput } from "@/lib/schemas";
+import { draftTargets } from "@/lib/draft-targets";
 import { getPath, scoreQualification } from "@/lib/scoring";
 import { generateDraft, generateStrategy, pickDecisionMakers, qualifyCompanies } from "@/lib/server/ai";
 import { demoPause, demoTemplateFor, replayCompanies, replayContacts, replayDrafts } from "@/lib/server/demo-replay";
@@ -202,12 +203,12 @@ export async function enrichSelectedContacts(id: ProjectId) {
 export async function writeDrafts(id: ProjectId, contactId?: string) {
   const { project, icp, profile } = await loadProject(id);
   if (project.demoOf) { await demoPause(); return { count: await replayDrafts(project, contactId), warnings: [] as string[] }; }
-  const [companies, contacts] = await Promise.all([
+  const [companies, contacts, drafts] = await Promise.all([
     fetchQuery(api.companies.listByProject, { projectId: id }),
     fetchQuery(api.contacts.listByProject, { projectId: id }),
+    fetchQuery(api.drafts.listByProject, { projectId: id }),
   ]);
-  const targets = contacts.filter((c) => (contactId ? c._id === contactId : c.selected));
-  if (!targets.length) throw new Error("Select at least one contact.");
+  const targets = draftTargets(contacts, drafts, contactId);
   // Proof points the user typed plus those extracted from uploaded documents during strategy.
   const typed = typeof project.input?.proofPoints === "string" ? project.input.proofPoints : "";
   const proofPoints = [typed, ...profile.proofPoints].filter(Boolean).join("; ");
