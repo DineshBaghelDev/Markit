@@ -23,9 +23,14 @@ Use [.env.example](.env.example) as a reference and add only missing values to `
 
 - `CONVEX_DEPLOYMENT`: deployment selector written by the Convex CLI, not a URL.
 - `NEXT_PUBLIC_CONVEX_URL`: public Convex backend URL, also written by the CLI. Existing `CONVEX_URL` is supported as a fallback.
-- `OPENAI_API_KEY`: server-only OpenAI key; still required for AI requests.
-- `OPENAI_MODEL`: model available to your account; choose it when implementing the AI workflow.
+- `LLM_BASE_URL`: OpenAI-compatible LLM server, e.g. `http://127.0.0.1:18080/v1` for local codex-as-api. Leave empty to use Vercel AI Gateway (`AI_GATEWAY_API_KEY`).
+- `AI_MODEL`: model ID (`gpt-6.1-sol` for codex-as-api on a ChatGPT account).
+- `DEMO_CACHE=on`: record LLM and Crustdata responses in ignored `.demo-cache/` and replay identical requests at no cost.
 - `CRUSTDATA_API_KEY`: server-only Crustdata key.
+
+### Demo LLM (codex-as-api)
+
+Run `codex-as-api` in a separate terminal (Python package, uses your Codex/ChatGPT login, listens on port 18080), then start the app.
 
 The app can render without API keys. Credentials are validated when an integration is used. Restart Next.js after changing public environment variables.
 
@@ -48,17 +53,20 @@ The app can render without API keys. Credentials are validated when an integrati
 ```text
 src/
   app/                 Pages, layout, error/loading states, API routes
-    api/health/        Application liveness endpoint
+    api/               strategy, discover, contacts, enrich, outreach, health routes
+    project/[id]/      Pipeline screen for one project
   components/
     providers/         Convex client provider
     ui/                shadcn components
   lib/
-    server/            Server-only OpenAI and Crustdata clients
-    validations/       Zod schemas and colocated tests
+    server/            LLM prompts (ai.ts), Crustdata client, demo cache, route helper
+    schemas.ts         Zod schemas for input, profile, ICP, qualification, drafts
+    crustdata-filters.ts, scoring.ts  ICP-to-filter mapping and rubric scoring (tested)
     env.ts             Environment validation
 convex/
   _generated/          CLI-generated API and database types (committed)
-  schema.ts            Initial campaign table
+  schema.ts            projects, companies, contacts, drafts
+  *.ts                 Queries and mutations per table
   health.ts            Read-only backend health query
 public/                Static assets
 context/               Product brief and handoff context
@@ -68,6 +76,6 @@ audit/                 Verification evidence and limitations
 
 ## Current scope
 
-The application foundation is ready: Next.js App Router, TypeScript, Tailwind, shadcn/ui, Convex, OpenAI SDK, Crustdata client, Zod, and Vitest. The starter page is intentionally minimal. Campaign creation, market research, lead search, and outreach generation are the next implementation step.
+Pipeline: business input → profile + ICP + insights → edit/approve ICP → Crustdata discovery + qualification (0–100) → decision-makers → outreach drafts → approve → CSV export. The UI is deliberately plain. Sending, reply handling and email enrichment are not implemented.
 
 See [setup notes](docs/setup.md), [decisions](docs/decisions.md), [progress](docs/progress.md), [audit](audit/README.md), and [agent instructions](AGENTS.md).

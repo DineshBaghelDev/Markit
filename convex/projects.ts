@@ -27,6 +27,18 @@ export const approveIcp = mutation({
   handler: (ctx, { id }) => ctx.db.patch("projects", id, { icpApproved: true, status: "icp_approved" }),
 });
 
+export const remove = mutation({
+  args: { id: v.id("projects") },
+  handler: async (ctx, { id }) => {
+    for (const table of ["drafts", "contacts", "companies"] as const) {
+      for await (const row of ctx.db.query(table).withIndex("by_projectId", (q) => q.eq("projectId", id))) {
+        await ctx.db.delete(table, row._id);
+      }
+    }
+    await ctx.db.delete("projects", id);
+  },
+});
+
 export const setStatus = mutation({
   args: { id: v.id("projects"), status: v.string(), error: v.optional(v.string()) },
   handler: (ctx, { id, status, error }) => ctx.db.patch("projects", id, { status, error }),

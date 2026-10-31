@@ -4,28 +4,25 @@ Updated: 2026-10-31
 
 ## Completed
 
-- Captured the project brief, stack, hackathon constraints, and YAGNI approach.
-- Added synchronized AGENTS.md and CLAUDE.md working instructions, including Context7 documentation rules.
-- Created context/, audit/, and docs/ with decision and progress trackers.
-- Linked the documentation from the root README.
-- Added ignore rules for credentials, dependencies, build output, and logs.
-- Installed and configured the application, integration clients, shadcn components, and local Convex backend at the repository root.
-- Passed lint, application/backend type checks, all eight tests, production build, and HTTP health checks.
+- Project rules, documentation trackers, and the Next.js + Convex + shadcn foundation.
+- Core pipeline (API routes in src/app/api, state in Convex): business profile + ICP + market insights; ICP edit/approve; Crustdata company discovery with autocomplete-resolved filters, deduplication and rubric qualification; decision-maker discovery; personalised outreach drafts with edit, regenerate, approve, copy and CSV export.
+- LLM via local codex-as-api (gpt-6.1-sol) with prompt-embedded schema and corrective retry; record/replay demo cache.
+- Recorded UAE battery-storage scenario end to end (30 companies, 7 contacts, 4 drafts).
+- Plain demo UI: / (form + project list) and /project/[id] (all steps).
 
-## Current state
+## Active
 
-Application setup is implemented at the repository root: Next.js, TypeScript, Tailwind, shadcn/UI, Convex, OpenAI SDK, Crustdata client, Zod, and Vitest. A local Convex deployment is configured and verified. The production build and all eight validation/environment tests passed.
+- Recording the B2B SaaS scenario (AuditPilot, UK compliance automation).
 
-## Planned
+## Deferred
 
-- Implement a focused market-to-leads-to-outreach demo flow.
-- Add campaign operations and wire real Crustdata/OpenAI requests into that flow.
-- Verify the demo and deploy to Vercel.
+- Gmail sending, reply classification, follow-ups, analytics; email enrichment (403 on current Crustdata plan); UI styling; Vercel deployment.
 
-## Blockers and open details
+## Known limitations
 
-The supplied Convex cloud project rejected the current account; use local Convex until an authorized account/deploy key is available. OpenAI requests need an API key and model. The setup does not yet implement the full product workflow.
+- Live discovery takes about 4 minutes with codex-as-api (qualification batches appear to run sequentially); replay is near-instant.
+- The strategy model often leaves company size empty; set it in the ICP editor before approval.
 
 ## Next action
 
-Implement the first campaign-to-company discovery interaction on the installed foundation.
+Finish the SaaS recording, click through both projects in the browser, and rehearse the demo with DEMO_CACHE=on.

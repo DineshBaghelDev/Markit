@@ -16,19 +16,23 @@ To use that cloud project, log in with an account that has access and run `npx c
 
 No public campaign write functions are exposed yet. Define access behavior when implementing the campaign flow.
 
-## OpenAI
+## LLM
 
-`src/lib/server/openai.ts` creates the official SDK client lazily. It requires `OPENAI_API_KEY` only when called and uses bounded timeouts/retries. Set `OPENAI_MODEL` when implementing the model request. No paid model requests are made by the starter.
+`src/lib/server/ai.ts` uses the Vercel AI SDK (`generateText` + `Output.object`). With `LLM_BASE_URL` set it calls an OpenAI-compatible server through `@ai-sdk/openai-compatible` (local codex-as-api for the demo); otherwise `AI_MODEL` is a Vercel AI Gateway model string. codex-as-api requires a system message, accepts only account-enabled models (`gpt-6.1-sol` works) and does not enforce `response_format`, so the JSON Schema is embedded in the system prompt and invalid output gets one corrective retry.
+
+## Demo cache
+
+With `DEMO_CACHE=on`, LLM and Crustdata POST responses are stored in `.demo-cache/<namespace>/<hash>.json`, keyed by the exact request. Identical requests replay from disk. Delete a file or folder to force a fresh call. The folder is gitignored because it contains real lead data.
 
 ## Crustdata
 
-`src/lib/server/crustdata.ts` implements the free account credits request using Bearer authentication and the documented `x-api-version: 2025-11-01` header. It validates the returned balance with Zod, disables response caching, and sets a timeout. Lead/company search will be added when the demo interaction is defined.
+`src/lib/server/crustdata.ts` implements the free account credits request using Bearer authentication and the documented `x-api-version: 2025-11-01` header. It validates the returned balance with Zod, disables response caching, and sets a timeout. It also wraps company/person search, company autocomplete and contact enrichment (the current key gets 403 on contact enrichment).
 
 ## Vercel
 
 Import the repository as a Next.js project with the repository root as the root directory. No custom Vercel configuration is needed.
 
-Use a cloud Convex deployment for hosting; the local backend URL is only for development. Set `NEXT_PUBLIC_CONVEX_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, and `CRUSTDATA_API_KEY` in the Vercel project environment.
+Use a cloud Convex deployment for hosting; the local backend URL is only for development. Set `NEXT_PUBLIC_CONVEX_URL`, `AI_MODEL` (AI Gateway; OIDC auth on Vercel), and `CRUSTDATA_API_KEY` in the Vercel project environment.
 
 To deploy Convex as part of the build, provide a suitable `CONVEX_DEPLOY_KEY` and use `npx convex deploy --cmd "npm run build"` as the build command. Do not put a deploy key in a public variable or the repository.
 
@@ -40,7 +44,8 @@ No Vercel deployment has been created as part of this local setup.
 - [Convex local agent development](https://docs.convex.dev/cli/agent-mode)
 - [Next.js CLI](https://nextjs.org/docs/app/api-reference/cli/create-next-app)
 - [shadcn Next.js installation](https://ui.shadcn.com/docs/installation/next)
-- [OpenAI quickstart](https://developers.openai.com/api/docs/quickstart)
+- [AI SDK structured output](https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data)
+- [Crustdata company search](https://docs.crustdata.com/company-docs/search/introduction)
 - [Crustdata account credits](https://docs.crustdata.com/general/credits)
 - [Vitest configuration](https://vitest.dev/config/)
 - [Zod basics](https://zod.dev/basics)

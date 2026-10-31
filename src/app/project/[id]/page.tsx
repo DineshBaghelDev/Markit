@@ -65,11 +65,8 @@ export default function ProjectPage() {
             onClick={() => call("contacts", "/api/contacts")}>
             {step.busy === "contacts" ? "Finding people…" : "Find decision-makers at selected companies"}
           </button>
-          <button className={btn} disabled={!contacts?.some((c) => c.selected) || !!step.busy}
-            onClick={() => call("enrich", "/api/enrich")}>
-            {step.busy === "enrich" ? "Enriching…" : "Enrich emails for selected contacts (uses credits)"}
-          </button>
         </div>
+        <p className="text-sm">Business emails are not available on the current Crustdata plan; contact via the LinkedIn profile.</p>
         {contacts && companies && <ContactTable contacts={contacts} companies={companies} />}
       </section>
 
@@ -225,7 +222,7 @@ function ContactTable({ contacts, companies }: { contacts: Doc<"contacts">[]; co
             <td>{c.profileUrl ? <a className="underline" href={c.profileUrl} target="_blank" rel="noreferrer">{c.name}</a> : c.name}</td>
             <td>{c.title}{c.source === "fixture" && <b> [cached replay]</b>}</td>
             <td>{companyName(c.companyId)}</td>
-            <td>{c.email ?? (c.emailStatus === "unavailable" ? "Not available" : "Not enriched")}</td>
+            <td>{c.email ?? "Not available"}</td>
             <td>{c.relevance}</td>
           </tr>
         ))}
