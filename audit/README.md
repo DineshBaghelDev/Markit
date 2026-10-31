@@ -58,3 +58,13 @@ Record checks actually performed, findings, and limitations here. Keep entries d
 - Replayed with DEMO_CACHE=on and DEMO_STEP_DELAY=on: by API with the LLM server offline (11 s, 10 s, 6 s, 8 s), and by driving the real UI in headless Chrome (profile 6.3 s, prospects 4.9 s, people 7.2 s, drafts 5.9 s, 5 emails, no errors).
 - Vercel: the demo cache is not deployed (git-ignored, contains real lead data), so Vercel runs live. Cache writes there used to fail drafts (read-only filesystem); recording is now best-effort.
 - Not verified: Gmail sending, autopilot and document upload from the new screens; anything on the Vercel deployment after this fix.
+
+## 2026-10-31 Post-submission audit
+
+- Ran: `npm run check` (lint clean, app and Convex typecheck clean, 10 tests passed) and `next build` (success) before the fixes; re-ran lint, typecheck and tests after them.
+- Scanned tracked files and Git history for credentials: only empty placeholders in `.env.example`; `.env*` and `.demo-cache/` were never committed.
+- Fixed: guided example projects said "Fetched live from Crustdata" although their results are copied from a recorded run; they now say "Replayed".
+- Fixed: without Gmail, the Campaign step simulated sends but presented them as real ("Ready", "N emails sent"). It is now labelled demo mode, and the pipeline shows "Simulated send".
+- Fixed stale docs: README scope (claimed sending and enrichment were missing), `.env.example` delay comment and missing `DEMO_TEMPLATE_PROJECT_ID`, setup notes, progress, decisions and context handoff.
+- Open, documented in README: no authentication on Convex functions or API routes; daily send cap is per project; live Autopilot can exceed the 300 s Vercel limit.
+- Not run: browser check of the changed labels.

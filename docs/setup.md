@@ -14,7 +14,7 @@ The supplied cloud project rejected the machine's current Convex identity. Local
 
 To use that cloud project, log in with an account that has access and run `npx convex dev --configure existing`. Ensure `CONVEX_DEPLOYMENT` contains a deployment selector, not a URL. Development scripts explicitly read `.env.local` so a conflicting inherited environment variable does not choose the wrong deployment.
 
-No public campaign write functions are exposed yet. Define access behavior when implementing the campaign flow.
+All Convex queries and mutations are public and unauthenticated (hackathon scope). Add auth before storing real customer data.
 
 ## LLM
 
@@ -26,17 +26,17 @@ With `DEMO_CACHE=on`, LLM and Crustdata POST responses are stored in `.demo-cach
 
 ## Crustdata
 
-`src/lib/server/crustdata.ts` implements the free account credits request using Bearer authentication and the documented `x-api-version: 2025-11-01` header. It validates the returned balance with Zod, disables response caching, and sets a timeout. It also wraps company/person search, company autocomplete and contact enrichment (the current key gets 403 on contact enrichment).
+`src/lib/server/crustdata.ts` implements the free account credits request using Bearer authentication and the documented `x-api-version: 2025-11-01` header. It validates the returned balance with Zod, disables response caching, and sets a timeout. It also wraps company/person search, company autocomplete and contact enrichment (the current key gets 403 on contact enrichment). Requests retry on 429/5xx and network errors.
 
 ## Vercel
 
 Import the repository as a Next.js project with the repository root as the root directory. No custom Vercel configuration is needed.
 
-Use a cloud Convex deployment for hosting; the local backend URL is only for development. Set `NEXT_PUBLIC_CONVEX_URL`, `AI_MODEL` (AI Gateway; OIDC auth on Vercel), and `CRUSTDATA_API_KEY` in the Vercel project environment.
+Use a cloud Convex deployment for hosting; the local backend URL is only for development. Set `NEXT_PUBLIC_CONVEX_URL`, `AI_MODEL` (AI Gateway; OIDC auth on Vercel), and `CRUSTDATA_API_KEY` in the Vercel project environment. Optional: `DEMO_STEP_DELAY=on`, `DEMO_TEMPLATE_PROJECT_ID`, and the Gmail variables (without them the Campaign step simulates sending and says so).
 
 To deploy Convex as part of the build, provide a suitable `CONVEX_DEPLOY_KEY` and use `npx convex deploy --cmd "npm run build"` as the build command. Do not put a deploy key in a public variable or the repository.
 
-No Vercel deployment has been created as part of this local setup.
+The `.demo-cache` folder is not deployed, so Vercel runs live calls; the guided example replays from a template project in Convex instead.
 
 ## Documentation sources
 

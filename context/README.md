@@ -19,4 +19,4 @@ Exact screens, search criteria, scoring, API access, and demo dataset are not ye
 
 ## Current handoff
 
-The core pipeline is implemented and recorded for the UAE battery-storage scenario; the B2B SaaS scenario (AuditPilot, UK) is being recorded. Run codex-as-api, then `npm run dev` with `DEMO_CACHE=on`; open projects from the home page. See [setup](../docs/setup.md), [progress](../docs/progress.md), and [decisions](../docs/decisions.md).
+The hackathon submission is done. The full five-step pipeline works, with recorded VoltGrid (UAE battery storage) and AuditPilot (UK compliance SaaS) runs. Locally, run codex-as-api, then `npm run dev:all` with `DEMO_CACHE=on`; on Vercel, "Use example" replays the template project. Known limitations are listed in the root README. See [setup](../docs/setup.md), [progress](../docs/progress.md), and [decisions](../docs/decisions.md).

@@ -43,7 +43,7 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
     }
     agentStore.set({ running: false, expr: "proud", text: `${ids.length} emails sent` });
     setSimulating(false);
-    toast(`${ids.length} ${ids.length === 1 ? "email" : "emails"} sent`);
+    toast(`${ids.length} ${ids.length === 1 ? "email" : "emails"} marked sent (demo mode, nobody was emailed)`);
   }
   const withPlaceholder = sendable.filter((d) => /\[[^\]]+\]/.test(d.subject + d.body));
   const view = sent.length && tab === "setup" && !sendable.length ? "pipeline" : tab;
@@ -92,7 +92,7 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
                       <td className="co">{companyOf(c)?.name}</td>
                       <td>{c?.name}<br /><span className="muted small">{c?.title}</span></td>
                       <td><StatusChip status={d.status === "sent" ? "Sent" : d.status === "exported" ? "Exported" : "Approved"} /></td>
-                      <td className="small">{d.sentAt ? `Sent ${new Date(d.sentAt).toLocaleString()}` : "Approved"}</td>
+                      <td className="small">{d.sentAt ? `${d.messageId?.startsWith("simulated-") ? "Simulated send" : "Sent"} ${new Date(d.sentAt).toLocaleString()}` : "Approved"}</td>
                       <td className="small muted">{d.status === "sent" ? "Watch your inbox for a reply" : "Ready to send"}</td>
                     </tr>
                   );
@@ -108,7 +108,7 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
               <h2 className="h2" id="h-from">1. Send from</h2>
               {config === null ? <span className="muted small">Checking email setup…</span> : config.configured
                 ? <div className="chk ok">{Icons.check}<span>Gmail connected. Emails go out from {config.from}, one at a time.</span></div>
-                : <div className="chk ok">{Icons.check}<span>Ready. Emails go out one at a time.</span></div>}
+                : <div className="chk warn">⚠ <span>Demo mode. Gmail is not configured on this server, so sending is simulated and nobody is emailed.</span></div>}
             </section>
             <section className="panel flex flex-col gap-3 p-5" aria-labelledby="h-first">
               <h2 className="h2" id="h-first">2. First email</h2>
@@ -146,7 +146,7 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
         <div className="modal-bg" onClick={(e) => { if (e.target === e.currentTarget) setConfirming(false); }} onKeyDown={(e) => { if (e.key === "Escape") setConfirming(false); }}>
           <div className="panel modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
             <h2 className="h2 !text-xl !font-normal" id="m-title">Send {sendable.length} {sendable.length === 1 ? "email" : "emails"}?</h2>
-            <p className="muted small m-0">{demo ? "Emails go out one at a time." : `From ${config?.from}. Only allowlisted addresses receive mail; others are skipped and reported.`}</p>
+            <p className="muted small m-0">{demo ? "Demo mode: sending is simulated and nobody is emailed." :`From ${config?.from}. Only allowlisted addresses receive mail; others are skipped and reported.`}</p>
             <div className="flex max-h-60 flex-col gap-1.5 overflow-auto">
               {sendable.map((d) => { const c = contactOf(d); return <div key={d._id} className="ev bg-[var(--bg)]"><span><strong className="font-medium">{c?.name}</strong>, {companyOf(c)?.name}</span><span className="muted small">{d.subject}</span></div>; })}
             </div>

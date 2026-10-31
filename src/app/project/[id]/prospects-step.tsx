@@ -67,7 +67,8 @@ export function ProspectsStep({ project, companies, contacts, busy, error, onGoS
   const selected = list.filter((c) => c.selected);
   const withSignal = list.filter((c) => qualOf(c)?.evidence.length).length;
   const topCities = cities.map((c) => [c, list.filter((x) => facts(x).city === c).length] as const).sort((a, b) => b[1] - a[1]).slice(0, 2);
-  const replayed = list.some((c) => c.source === "fixture");
+  // Guided example projects copy a recorded run, so they must not claim to be live.
+  const replayed = !!project.demoOf || list.some((c) => c.source === "fixture");
   const open = list.find((c) => c._id === openId) ?? null;
   const people = contacts.filter((p) => selected.some((c) => c._id === p.companyId));
   const draftable = selected.filter((c) => contacts.some((p) => p.companyId === c._id && p.selected));
