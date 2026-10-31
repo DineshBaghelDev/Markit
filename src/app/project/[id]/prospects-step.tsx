@@ -13,7 +13,7 @@ import { RUBRIC } from "./strategy-step";
 type Company = Doc<"companies">;
 type Contact = Doc<"contacts">;
 
-const DISCOVER_LINES = ["Turning the ICP into Crustdata searches", "Searching companies per segment", "Removing duplicates", "Scoring each company with its evidence", "Keeping only evidence found in the record"];
+const DISCOVER_LINES = ["Turning the ICP into Crustdata searches", "Searching companies per segment", "Removing duplicates", "Companies appear here as soon as the search returns", "You can leave this page; Markit keeps working"];
 const PEOPLE_LINES = ["Finding people at the selected companies", "Filtering to decision-maker seniority", "Matching titles to your buyer roles"];
 
 // Typed accessors for the raw Crustdata record stored on each company.
@@ -46,7 +46,9 @@ export function ProspectsStep({ project, companies, contacts, busy, error, onGoS
   const list = companies ?? [];
   const head = <StepHeader step={3} title="Worth approaching, and why" lede="Ranked by fit with your approved ICP. Click any company to see the evidence behind its score." />;
 
-  if (busy === "discover") return <>{head}<Progress lines={DISCOVER_LINES} /></>;
+  // While a search runs, show progress until companies arrive; after that the table fills in as scores land.
+  const scoring = busy === "discover" && (companies?.length ?? 0) > 0;
+  if (busy === "discover" && !scoring) return <>{head}<Progress lines={DISCOVER_LINES} /></>;
   if (companies === undefined) return <>{head}<EmptyState title="Loading prospects" text="One moment." expr="thinking" /></>;
   if (!list.length && !project.icpApproved) return <>{head}<EmptyState title="Prospects are locked" text="Approve your ICP first. Markit searches only with filters you have approved." action="Go to strategy" onAction={onGoStrategy} /></>;
   if (!list.length) return <>{head}<ErrorNote message={error} /><EmptyState title="Ready to search" text="Your ICP is approved. Markit will search Crustdata for companies that match it." action="Find companies" onAction={onDiscover} /></>;
@@ -85,6 +87,9 @@ export function ProspectsStep({ project, companies, contacts, busy, error, onGoS
       <ErrorNote message={error} />
       <div className="reveal flex flex-col gap-4">
         {busy === "contacts" && <Progress lines={PEOPLE_LINES} />}
+        {scoring && (
+          <Banner kind="warn"><strong className="font-semibold">Scoring {list.length} companies.</strong> {list.filter((c) => c.score !== undefined).length} scored so far. Scores appear batch by batch; you can review or leave this page meanwhile.</Banner>
+        )}
         <Banner kind="ok" action={
           <details className="how"><summary>How we searched</summary><div className="code">{[
             "Crustdata Company Search",

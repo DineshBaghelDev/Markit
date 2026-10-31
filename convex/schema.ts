@@ -19,6 +19,8 @@ export default defineSchema({
     demoOf: v.optional(v.id("projects")),
     icpApproved: v.boolean(),
     status: v.string(),
+    // When status last changed; used to detect background runs that died (see runState.ts).
+    statusAt: v.optional(v.number()),
     error: v.optional(v.string()),
   }),
   companies: defineTable({

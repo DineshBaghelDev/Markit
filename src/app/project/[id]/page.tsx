@@ -1,11 +1,12 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import { isActiveRun, RUNNING_STATUSES } from "../../../../convex/runState";
 import type { BusinessProfile, ParsedBusinessInput } from "@/lib/schemas";
 import { postJson } from "@/lib/post-json";
 import { agentStore } from "@/components/markit/blo-engine";
@@ -36,9 +37,17 @@ function useHashStep() {
   return [step, go] as const;
 }
 
-const SERVER_RUNNING = ["discovering", "autopilot_contacts", "autopilot_drafts"];
 const AUTOPILOT_STAGES = ["ICP approved", "Find and score companies", "Pick decision-makers", "Write drafts"];
-const STAGE_BY_STATUS: Record<string, number> = { discovering: 1, autopilot_contacts: 2, autopilot_drafts: 3, autopilot_done: 4 };
+const STAGE_BY_STATUS: Record<string, number> = { autopilot_queued: 0, discovering: 1, autopilot_prospects: 2, autopilot_contacts: 2, autopilot_drafts: 3, autopilot_done: 4 };
+// Autopilot hand-off points: the page starts the next background stage when it sees one of these.
+const AUTOPILOT_NEXT = ["autopilot_queued", "autopilot_prospects"];
+
+// A clock for stale-run detection; ticks every 15 s.
+function useNow() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 15_000); return () => clearInterval(t); }, []);
+  return now;
+}
 
 function stepStates(project: Doc<"projects">, companies: Doc<"companies">[], contacts: Doc<"contacts">[], drafts: Doc<"drafts">[]): Record<Step, StepInfo> {
   const approvedDrafts = drafts.filter((d) => d.status !== "draft");
@@ -71,7 +80,19 @@ export default function ProjectPage() {
   const task = useAgentTask();
   const [step, go] = useHashStep();
   const status = project?.status ?? "";
-  const serverRunning = !task.busy && SERVER_RUNNING.includes(status);
+  const now = useNow();
+  const autopilotNext = AUTOPILOT_NEXT.includes(status);
+  // Background work in progress (search or autopilot). A running status that stopped updating means the run died.
+  const serverRunning = !task.busy && (isActiveRun(status, project?.statusAt, now) || autopilotNext);
+  const stalled = RUNNING_STATUSES.includes(status) && !isActiveRun(status, project?.statusAt, now);
+
+  // Start the next autopilot stage. The server claims each stage atomically, so a repeat call is harmless.
+  const started = useRef("");
+  useEffect(() => {
+    if (!autopilotNext || started.current === status) return;
+    started.current = status;
+    postJson("/api/autopilot/continue", { projectId }).catch((error) => toast(error instanceof Error ? error.message : String(error)));
+  }, [autopilotNext, status, projectId]);
 
   // Mirror server-side runs (autopilot, or a search started elsewhere) in the agent status and cursor.
   useEffect(() => {
@@ -94,7 +115,8 @@ export default function ProjectPage() {
   const profile = project.profile as BusinessProfile;
   const call = (url: string, extra: object = {}) => () => postJson<{ warnings?: string[] }>(url, { projectId, ...extra });
 
-  const discover = () => { go("prospects"); task.run("discover", "Searching Crustdata", "Prospects ranked", call("/api/discover")); };
+  // Discovery runs in the background; the page follows its status and the companies table fills in live.
+  const discover = () => { go("prospects"); task.run("discover", "Starting the search", "Searching Crustdata", call("/api/discover")); };
   const approveAndSearch = async () => { await approveIcp({ id: projectId }); toast("ICP approved"); discover(); };
   const findPeople = () => task.run("contacts", "Finding decision-makers", "Decision-makers found", async () => {
     scrollTo({ top: 0, behavior: "smooth" });
@@ -131,6 +153,7 @@ export default function ProjectPage() {
     <AppShell projectName={name} tag={project.demoOf ? "Example" : undefined} steps={stepStates(project, companies, contacts, drafts)} current={step} onStep={go}
       onRename={async (v) => { await rename({ id: projectId, name: v }); toast("Project renamed"); }}>
       {status === "error" && project.error && <ErrorNote message={`Last run failed: ${project.error}`} />}
+      {stalled && <ErrorNote message="The last run stopped before finishing, probably at the 5-minute server limit. Results found so far are kept. Start it again to continue." />}
       {(serverRunning || status === "autopilot_done") && stage !== undefined && (
         <Banner kind={status === "autopilot_done" ? "ok" : "warn"}
           action={status === "autopilot_done" ? <button className="btn sm" type="button" onClick={() => go("outreach")}>Review drafts</button> : undefined}>
@@ -146,12 +169,12 @@ export default function ProjectPage() {
       )}
       {step === "prospects" && (
         <ProspectsStep project={project} companies={companies} contacts={contacts} error={task.error}
-          busy={task.busy ?? (status === "discovering" ? "discover" : status === "autopilot_contacts" ? "contacts" : null)}
+          busy={task.busy ?? (!serverRunning ? null : status === "discovering" || status === "autopilot_queued" ? "discover" : status === "autopilot_contacts" || status === "autopilot_prospects" ? "contacts" : null)}
           onGoStrategy={() => go("strategy")} onDiscover={discover} onFindPeople={findPeople} onDraft={draftAll} onEnrich={enrich} />
       )}
       {step === "outreach" && (
         <OutreachStep companies={companies} contacts={contacts} drafts={drafts} error={task.error}
-          busy={task.busy ?? (status === "autopilot_drafts" ? "drafts" : null)}
+          busy={task.busy ?? (serverRunning && status === "autopilot_drafts" ? "drafts" : null)}
           onGoProspects={() => go("prospects")} onWrite={write} onNext={() => go("campaign")} />
       )}
       {step === "campaign" && (

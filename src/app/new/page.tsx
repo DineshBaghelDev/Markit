@@ -36,7 +36,7 @@ const MAX_FILES = 5;
 const MAX_BYTES = 4 * 1024 * 1024;
 const STATUS_TEXT: Record<string, string> = {
   strategy_ready: "Strategy ready", icp_approved: "ICP approved", discovering: "Searching", prospects_ready: "Prospects ready",
-  autopilot_contacts: "Autopilot running", autopilot_drafts: "Autopilot running", autopilot_done: "Drafts ready", error: "Needs attention",
+  autopilot_queued: "Autopilot running", autopilot_prospects: "Autopilot running", autopilot_contacts: "Autopilot running", autopilot_drafts: "Autopilot running", autopilot_done: "Drafts ready", error: "Needs attention",
 };
 
 const LOCKED: Record<Step, StepInfo> = {

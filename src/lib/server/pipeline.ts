@@ -62,10 +62,15 @@ export async function discoverProspects(id: ProjectId) {
   if (!project.icpApproved) throw new Error("Approve the ICP before discovering companies.");
   await setStatus(id, "discovering");
   if (project.demoOf) {
-    await demoPause();
-    const count = await replayCompanies(project);
-    await setStatus(id, "prospects_ready");
-    return { count, warnings: [] as string[] };
+    try {
+      await demoPause();
+      const count = await replayCompanies(project);
+      await setStatus(id, "prospects_ready");
+      return { count, warnings: [] as string[] };
+    } catch (error) {
+      await setStatus(id, "error", errorText(error));
+      throw error;
+    }
   }
   const warnings: string[] = [];
 
@@ -100,31 +105,37 @@ export async function discoverProspects(id: ProjectId) {
     const unique = dedupeCompanies(settled.flatMap((r) => (r.status === "fulfilled" ? r.value : [])));
     if (!unique.length) throw new Error(`No companies found. ${warnings.join(" ")}`.trim());
 
+    // Store every company first (unscored) so the table fills right after the search, then save each
+    // qualification batch as it finishes. Scoring is the slow part of a live run.
     const records = unique.map(compact);
-    const BATCH = 12;
-    const batches = Array.from({ length: Math.ceil(records.length / BATCH) }, (_, i) => records.slice(i * BATCH, (i + 1) * BATCH));
-    const scored = await Promise.allSettled(batches.map((b) => qualifyCompanies(profile, icp, b)));
-    scored.forEach((r) => r.status === "rejected" && warnings.push(`Qualification failed for a batch: ${errorText(r.reason)}`));
-    const byId = new Map(scored.flatMap((r) => (r.status === "fulfilled" ? r.value : [])).map((q) => [q.companyId, q]));
-
-    const companies = unique.map((company, index) => {
-      const q = byId.get(company.crustdata_company_id);
-      const qualification = q ? scoreQualification(q, records[index]) : undefined;
-      return {
+    await fetchMutation(api.companies.replaceForProject, {
+      projectId: id,
+      companies: unique.map((company, index) => ({
         crustdataId: company.crustdata_company_id,
         name: company.basic_info?.name ?? `Company ${company.crustdata_company_id}`,
         domain: company.basic_info?.primary_domain ?? undefined,
         segment: company.segment,
         data: records[index],
-        score: qualification?.score,
-        qualification,
         source: company.cached ? ("fixture" as const) : ("live" as const),
-      };
-    }).sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+      })),
+    });
+    const recordById = new Map(records.map((r) => [r.crustdata_company_id, r]));
+    const BATCH = 12;
+    const batches = Array.from({ length: Math.ceil(records.length / BATCH) }, (_, i) => records.slice(i * BATCH, (i + 1) * BATCH));
+    const scored = await Promise.allSettled(batches.map(async (batch) => {
+      const results = await qualifyCompanies(profile, icp, batch);
+      const updates = results.flatMap((q) => {
+        const record = recordById.get(q.companyId);
+        if (!record) return [];
+        const qualification = scoreQualification(q, record);
+        return [{ crustdataId: q.companyId, score: qualification.score, qualification }];
+      });
+      await fetchMutation(api.companies.setQualifications, { projectId: id, updates });
+    }));
+    scored.forEach((r) => r.status === "rejected" && warnings.push(`Qualification failed for a batch: ${errorText(r.reason)}`));
 
-    await fetchMutation(api.companies.replaceForProject, { projectId: id, companies });
     await setStatus(id, "prospects_ready", warnings.length ? warnings.join(" ") : undefined);
-    return { count: companies.length, warnings };
+    return { count: unique.length, warnings };
   } catch (error) {
     await setStatus(id, "error", errorText(error));
     throw error;
@@ -240,12 +251,14 @@ export async function writeDrafts(id: ProjectId, contactId?: string) {
 const AUTO_COMPANIES = 5;
 const AUTO_MIN_SCORE = 60;
 
-export async function runAutopilot(id: ProjectId) {
+// Autopilot runs as two background stages, each in its own function invocation (and 300 s budget):
+// discovery + company selection, then decision-makers, enrichment and drafts. The project page starts each stage
+// when it sees autopilot_queued / autopilot_prospects, so a closed tab simply resumes on the next visit.
+export async function runAutopilotDiscovery(id: ProjectId) {
   const log: string[] = [];
   try {
     await fetchMutation(api.projects.approveIcp, { id });
     log.push("ICP auto-approved.");
-
     const discovery = await discoverProspects(id);
     log.push(`Discovered and scored ${discovery.count} companies.`, ...discovery.warnings);
 
@@ -255,8 +268,19 @@ export async function runAutopilot(id: ProjectId) {
     if (!picked.length) throw new Error(`No company scored ${AUTO_MIN_SCORE}+; review the ICP.`);
     await Promise.all(picked.map((c) => fetchMutation(api.companies.setSelected, { id: c._id, selected: true })));
     log.push(`Selected ${picked.length} companies scoring ${AUTO_MIN_SCORE}+: ${picked.map((c) => c.name).join(", ")}.`);
-    await setStatus(id, "autopilot_contacts");
+    // The log travels in the error field until the run finishes (shown as notes, not as a failure).
+    await setStatus(id, "autopilot_prospects", log.join(" "));
+  } catch (error) {
+    log.push(`Stopped: ${errorText(error)}`);
+    await setStatus(id, "error", log.join(" "));
+    throw error;
+  }
+}
 
+export async function runAutopilotOutreach(id: ProjectId) {
+  const project = await fetchQuery(api.projects.get, { id });
+  const log: string[] = project?.error ? [project.error] : [];
+  try {
     const people = await findDecisionMakers(id);
     log.push(`Found ${people.count} decision-makers.`, ...people.warnings);
     const contacts = await fetchQuery(api.contacts.listByProject, { projectId: id });
@@ -267,12 +291,11 @@ export async function runAutopilot(id: ProjectId) {
 
     const enrichment = await enrichSelectedContacts(id);
     log.push(enrichment.warning ?? `Enriched ${enrichment.enriched}/${enrichment.requested} emails.`);
-    await setStatus(id, "autopilot_drafts");
+    await setStatus(id, "autopilot_drafts", log.join(" "));
 
     const drafts = await writeDrafts(id);
     log.push(`Wrote ${drafts.count} drafts (awaiting human approval before export).`, ...drafts.warnings);
     await setStatus(id, "autopilot_done", log.join(" "));
-    return { log };
   } catch (error) {
     log.push(`Stopped: ${errorText(error)}`);
     await setStatus(id, "error", log.join(" "));

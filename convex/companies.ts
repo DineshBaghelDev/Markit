@@ -39,3 +39,18 @@ export const setSelected = mutation({
   args: { id: v.id("companies"), selected: v.boolean() },
   handler: (ctx, { id, selected }) => ctx.db.patch("companies", id, { selected }),
 });
+
+// Scores arrive batch by batch during discovery, so prospects can be reviewed before scoring finishes.
+export const setQualifications = mutation({
+  args: {
+    projectId: v.id("projects"),
+    updates: v.array(v.object({ crustdataId: v.number(), score: v.number(), qualification: v.any() })),
+  },
+  handler: async (ctx, { projectId, updates }) => {
+    const byCrustdataId = new Map(updates.map((u) => [u.crustdataId, u]));
+    for await (const company of ctx.db.query("companies").withIndex("by_projectId", (q) => q.eq("projectId", projectId))) {
+      const update = byCrustdataId.get(company.crustdataId);
+      if (update) await ctx.db.patch("companies", company._id, { score: update.score, qualification: update.qualification });
+    }
+  },
+});
