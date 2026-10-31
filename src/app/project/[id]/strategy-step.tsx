@@ -5,7 +5,7 @@ import { useMutation } from "convex/react";
 import { toast } from "sonner";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc } from "../../../../convex/_generated/dataModel";
-import { icpSchema, type Icp, type Insights } from "@/lib/schemas";
+import { icpSchema, parseStoredIcp, type Icp, type Insights } from "@/lib/schemas";
 import { ActionBar, EmptyState, ErrorNote, Icons, StatusChip, StepHeader } from "@/components/markit/app-shell";
 
 // Fixed qualification rubric used by the scoring code (src/lib/scoring.ts).
@@ -24,7 +24,7 @@ export function StrategyStep({ project, hasCompanies, busy, error, onApproveAndS
 }) {
   const updateIcp = useMutation(api.projects.updateIcp);
   const [hl, setHl] = useState<Field | null>(null);
-  const icp = project.icp ? icpSchema.parse(project.icp) : undefined;
+  const icp = project.icp ? parseStoredIcp(project.icp) : undefined;
   const insights = project.insights as Insights | undefined;
   const approved = project.icpApproved;
 

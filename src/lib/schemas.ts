@@ -29,7 +29,7 @@ export const businessProfileSchema = z.object({
   problemSolved: z.string(),
   valueProposition: z.string(),
   salesObjective: z.string(),
-  proofPoints: z.array(z.string()).default([]).describe(
+  proofPoints: z.array(z.string()).describe(
     "Verifiable seller claims stated in the input or documents: named customers, results, certifications, awards. Empty if none.",
   ),
 });
@@ -38,7 +38,7 @@ export type BusinessProfile = z.infer<typeof businessProfileSchema>;
 export const icpSchema = z.object({
   segments: z.array(z.object({
     name: z.string(),
-    searchQuery: z.string().default("").describe("One sentence describing the ideal company in this segment the way its own company description would read; used for semantic search"),
+    searchQuery: z.string().describe("One sentence describing the ideal company in this segment the way its own company description would read; used for semantic search"),
     industries: z.array(z.string()).describe("LinkedIn-style industry names, e.g. 'Utilities', 'Software Development'"),
     useCases: z.array(z.string()),
     rationale: z.string(),
@@ -92,3 +92,13 @@ export const draftSchema = z.object({
   })),
 });
 export type Draft = z.infer<typeof draftSchema>;
+
+// LLM schemas must list every field as required (OpenAI strict structured output), but projects stored
+// before a field existed lack it. Fill those defaults before parsing stored records.
+export function parseStoredIcp(raw: unknown): Icp {
+  const icp = raw as Icp;
+  return icpSchema.parse({ ...icp, segments: icp.segments?.map((s) => ({ ...s, searchQuery: s.searchQuery ?? "" })) });
+}
+export function parseStoredProfile(raw: unknown): BusinessProfile {
+  return businessProfileSchema.parse({ proofPoints: [], ...(raw as object) });
+}

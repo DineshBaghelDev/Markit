@@ -5,7 +5,7 @@ import { useMutation } from "convex/react";
 import { toast } from "sonner";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
-import { icpSchema } from "@/lib/schemas";
+import { parseStoredIcp } from "@/lib/schemas";
 import type { ScoredQualification } from "@/lib/scoring";
 import { ActionBar, Banner, EmptyState, ErrorNote, Icons, Progress, ScorePill, StepHeader } from "@/components/markit/app-shell";
 import { RUBRIC } from "./strategy-step";
@@ -51,7 +51,7 @@ export function ProspectsStep({ project, companies, contacts, busy, error, onGoS
   if (!list.length && !project.icpApproved) return <>{head}<EmptyState title="Prospects are locked" text="Approve your ICP first. Markit searches only with filters you have approved." action="Go to strategy" onAction={onGoStrategy} /></>;
   if (!list.length) return <>{head}<ErrorNote message={error} /><EmptyState title="Ready to search" text="Your ICP is approved. Markit will search Crustdata for companies that match it." action="Find companies" onAction={onDiscover} /></>;
 
-  const icp = icpSchema.parse(project.icp);
+  const icp = parseStoredIcp(project.icp);
   const q = f.q.toLowerCase();
   const rows = list.filter((c) => !hidden.has(c._id)).filter((c) => {
     const { city, head: n } = facts(c);

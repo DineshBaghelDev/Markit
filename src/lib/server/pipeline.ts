@@ -4,7 +4,7 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { buildCompanyQueries, buildPeopleAtCompanyQuery, dedupeCompanies } from "@/lib/crustdata-filters";
-import { businessProfileSchema, icpSchema, type ParsedBusinessInput } from "@/lib/schemas";
+import { parseStoredIcp, parseStoredProfile, type ParsedBusinessInput } from "@/lib/schemas";
 import { getPath, scoreQualification } from "@/lib/scoring";
 import { generateDraft, generateStrategy, pickDecisionMakers, qualifyCompanies } from "@/lib/server/ai";
 import { DAILY_SEND_LIMIT, emailConfig, finalizeBody, isAllowedRecipient, sendEmail } from "@/lib/server/email";
@@ -18,7 +18,7 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 async function loadProject(id: ProjectId) {
   const project = await fetchQuery(api.projects.get, { id });
   if (!project) throw new Error("Project not found");
-  return { project, icp: icpSchema.parse(project.icp), profile: businessProfileSchema.parse(project.profile) };
+  return { project, icp: parseStoredIcp(project.icp), profile: parseStoredProfile(project.profile) };
 }
 
 const setStatus = (id: ProjectId, status: string, error?: string) =>
