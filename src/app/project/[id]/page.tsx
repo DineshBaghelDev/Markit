@@ -189,7 +189,7 @@ function ProspectTable({ companies }: { companies: Doc<"companies">[] }) {
               <tr key={c._id} className="border-t align-top">
                 <td><input type="checkbox" checked={c.selected} onChange={(e) => setSelected({ id: c._id, selected: e.target.checked })} /></td>
                 <td>{c.score ?? "-"}</td>
-                <td>{c.name}<br /><span className="text-gray-500">{c.domain}</span>{c.source === "fixture" && <b> [demo data]</b>}</td>
+                <td>{c.name}<br /><span className="text-gray-500">{c.domain}</span>{c.source === "fixture" && <b> [cached replay]</b>}</td>
                 <td>{c.segment}</td>
                 <td>
                   {q ? (
@@ -223,7 +223,7 @@ function ContactTable({ contacts, companies }: { contacts: Doc<"contacts">[]; co
           <tr key={c._id} className="border-t align-top">
             <td><input type="checkbox" checked={c.selected} onChange={(e) => setSelected({ id: c._id, selected: e.target.checked })} /></td>
             <td>{c.profileUrl ? <a className="underline" href={c.profileUrl} target="_blank" rel="noreferrer">{c.name}</a> : c.name}</td>
-            <td>{c.title}</td>
+            <td>{c.title}{c.source === "fixture" && <b> [cached replay]</b>}</td>
             <td>{companyName(c.companyId)}</td>
             <td>{c.email ?? (c.emailStatus === "unavailable" ? "Not available" : "Not enriched")}</td>
             <td>{c.relevance}</td>

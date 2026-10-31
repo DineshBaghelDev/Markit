@@ -48,7 +48,10 @@ export const POST = jsonRoute(z.object({ projectId: z.string() }), async ({ proj
     const queries = buildCompanyQueries(icp, segments, countries);
     if (!queries.length) throw new Error("No ICP industry matched a Crustdata industry. Edit the ICP industries.");
     const results = await Promise.all(queries.map(async ({ segment, query }) =>
-      (await companySearch(query)).map((company) => ({ ...company, segment }))));
+    {
+      const { companies, cached } = await companySearch(query);
+      return companies.map((company) => ({ ...company, segment, cached }));
+    }));
     const unique = dedupeCompanies(results.flat());
 
     const records = unique.map(compact);
@@ -67,7 +70,7 @@ export const POST = jsonRoute(z.object({ projectId: z.string() }), async ({ proj
         data: records[index],
         score: scored?.score,
         qualification: scored,
-        source: "live" as const,
+        source: company.cached ? "fixture" as const : "live" as const,
       };
     }).sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
 

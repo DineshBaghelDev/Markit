@@ -42,11 +42,17 @@ export function buildCompanyQueries(
     }));
 }
 
-export function buildPeopleAtCompanyQuery(crustdataCompanyId: number, limit = 20): PersonSearchQuery {
+// Crustdata seniority values (from /person/search/autocomplete) of people who can own or sponsor a purchase.
+export const DECISION_MAKER_SENIORITY = ["CXO", "Vice President", "Director", "Owner / Partner", "Experienced Manager"];
+
+export function buildPeopleAtCompanyQuery(crustdataCompanyId: number, limit = 25): PersonSearchQuery {
   return {
     filters: {
       op: "and",
-      conditions: [{ field: "experience.employment_details.current.company_id", type: "=", value: crustdataCompanyId }],
+      conditions: [
+        { field: "experience.employment_details.current.company_id", type: "=", value: crustdataCompanyId },
+        { field: "experience.employment_details.current.seniority_level", type: "in", value: DECISION_MAKER_SENIORITY },
+      ],
     },
     limit,
   };

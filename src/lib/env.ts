@@ -17,7 +17,10 @@ export function requireServerEnv(name: "CRUSTDATA_API_KEY"): string {
   return result.data;
 }
 
-// AI Gateway model string ("provider/model"). Gateway auth comes from AI_GATEWAY_API_KEY or Vercel OIDC.
-export function aiModel(): string {
-  return process.env.AI_MODEL?.trim() || "openai/gpt-5-mini";
+// LLM_BASE_URL selects an OpenAI-compatible server (e.g. local codex-as-api);
+// otherwise AI_MODEL is a Vercel AI Gateway "provider/model" string.
+export function llmConfig() {
+  const baseURL = process.env.LLM_BASE_URL?.trim() || undefined;
+  const model = process.env.AI_MODEL?.trim() || (baseURL ? "gpt-6.1-sol" : "openai/gpt-5-mini");
+  return { baseURL, model, apiKey: process.env.LLM_API_KEY?.trim() || "local" };
 }

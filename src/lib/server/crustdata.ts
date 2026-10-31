@@ -2,9 +2,17 @@ import "server-only";
 
 import { z } from "zod";
 import { requireServerEnv } from "@/lib/env";
+import { withDemoCache } from "@/lib/server/demo-cache";
 import type { CompanySearchQuery, PersonSearchQuery } from "@/lib/crustdata-filters";
 
 const BASE_URL = "https://api.crustdata.com";
+
+// POST calls go through the demo cache; `cached` tells callers the data was replayed, not fetched now.
+async function cachedRequest<T>(path: string, schema: z.ZodType<T>, body: unknown) {
+  const { value, cached } = await withDemoCache(`crustdata${path.replaceAll("/", "-")}`, body, () =>
+    crustdataRequest(path, z.unknown(), body));
+  return { value: schema.parse(value), cached };
+}
 
 async function crustdataRequest<T>(path: string, schema: z.ZodType<T>, body?: unknown): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
@@ -36,8 +44,8 @@ const suggestionsSchema = z.object({ suggestions: z.array(z.object({ value: z.st
 
 // Map free-text values (e.g. LLM industry names) to exact indexed values.
 export async function companyAutocomplete(field: string, query: string, limit = 3): Promise<string[]> {
-  const result = await crustdataRequest("/company/search/autocomplete", suggestionsSchema, { field, query, limit });
-  return result.suggestions.map((s) => s.value);
+  const { value } = await cachedRequest("/company/search/autocomplete", suggestionsSchema, { field, query, limit });
+  return value.suggestions.map((s) => s.value);
 }
 
 export const crustdataCompanySchema = z.looseObject({
@@ -49,9 +57,10 @@ export const crustdataCompanySchema = z.looseObject({
 });
 export type CrustdataCompany = z.infer<typeof crustdataCompanySchema>;
 
-export async function companySearch(query: CompanySearchQuery): Promise<CrustdataCompany[]> {
+export async function companySearch(query: CompanySearchQuery) {
   const schema = z.object({ companies: z.array(crustdataCompanySchema) });
-  return (await crustdataRequest("/company/search", schema, query)).companies;
+  const { value, cached } = await cachedRequest("/company/search", schema, query);
+  return { companies: value.companies, cached };
 }
 
 export const crustdataPersonSchema = z.looseObject({
@@ -79,9 +88,10 @@ export const crustdataPersonSchema = z.looseObject({
 });
 export type CrustdataPerson = z.infer<typeof crustdataPersonSchema>;
 
-export async function personSearch(query: PersonSearchQuery): Promise<CrustdataPerson[]> {
+export async function personSearch(query: PersonSearchQuery) {
   const schema = z.object({ profiles: z.array(crustdataPersonSchema) });
-  return (await crustdataRequest("/person/search", schema, query)).profiles;
+  const { value, cached } = await cachedRequest("/person/search", schema, query);
+  return { profiles: value.profiles, cached };
 }
 
 const contactEnrichSchema = z.array(z.looseObject({
@@ -100,11 +110,11 @@ export async function enrichBusinessEmails(profileUrls: string[]): Promise<Map<s
   const emails = new Map<string, string>();
   for (let i = 0; i < profileUrls.length; i += 25) {
     const batch = profileUrls.slice(i, i + 25);
-    const result = await crustdataRequest("/person/contact/enrich", contactEnrichSchema, {
+    const { value } = await cachedRequest("/person/contact/enrich", contactEnrichSchema, {
       professional_network_profile_urls: batch,
       fields: ["contact.business_emails"],
     });
-    for (const entry of result) {
+    for (const entry of value) {
       const options = entry.matches?.[0]?.person_data.contact?.business_emails ?? [];
       const best = options.find((e) => e.status === "deliverable") ?? options[0];
       if (best) emails.set(entry.matched_on, best.email);
