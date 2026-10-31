@@ -4,13 +4,22 @@ import { z } from "zod";
 export const businessInputSchema = z.object({
   companyName: z.string().trim().max(200).default(""),
   website: z.string().trim().max(300).default(""),
-  product: z.string().trim().min(1, "Describe what you sell.").max(3_000),
+  product: z.string().trim().max(3_000).default(""),
   valueProposition: z.string().trim().max(2_000).default(""),
   geography: z.string().trim().max(300).default(""),
   objective: z.string().trim().max(1_000).default(""),
   proofPoints: z.string().trim().max(2_000).default(""),
+  // Text extracted server-side from uploaded seller documents.
+  documents: z.array(z.object({ name: z.string(), text: z.string(), truncated: z.boolean() })).max(5).default([]),
+}).refine((input) => input.product || input.documents.length, {
+  message: "Describe what you sell or upload a company document.",
+  path: ["product"],
 });
-export type BusinessInput = z.infer<typeof businessInputSchema>;
+// Fields the client sends (documents are added server-side) and the parsed server-side shape.
+export type BusinessInput = Omit<z.input<typeof businessInputSchema>, "documents"> & {
+  [K in "companyName" | "website" | "product" | "valueProposition" | "geography" | "objective" | "proofPoints"]: string;
+};
+export type ParsedBusinessInput = z.output<typeof businessInputSchema>;
 
 // LLM output schemas use nullable instead of optional so strict structured output works.
 export const businessProfileSchema = z.object({
@@ -20,6 +29,9 @@ export const businessProfileSchema = z.object({
   problemSolved: z.string(),
   valueProposition: z.string(),
   salesObjective: z.string(),
+  proofPoints: z.array(z.string()).default([]).describe(
+    "Verifiable seller claims stated in the input or documents: named customers, results, certifications, awards. Empty if none.",
+  ),
 });
 export type BusinessProfile = z.infer<typeof businessProfileSchema>;
 

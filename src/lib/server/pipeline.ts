@@ -4,7 +4,7 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { buildCompanyQueries, buildPeopleAtCompanyQuery, dedupeCompanies } from "@/lib/crustdata-filters";
-import { businessProfileSchema, icpSchema, type BusinessInput } from "@/lib/schemas";
+import { businessProfileSchema, icpSchema, type ParsedBusinessInput } from "@/lib/schemas";
 import { getPath, scoreQualification } from "@/lib/scoring";
 import { generateDraft, generateStrategy, pickDecisionMakers, qualifyCompanies } from "@/lib/server/ai";
 import {
@@ -24,7 +24,7 @@ const setStatus = (id: ProjectId, status: string, error?: string) =>
   fetchMutation(api.projects.setStatus, { id, status, error });
 
 // Steps 1-3: business understanding, ICP and market insights in one model call.
-export async function createProject(input: BusinessInput): Promise<ProjectId> {
+export async function createProject(input: ParsedBusinessInput): Promise<ProjectId> {
   const strategy = await generateStrategy(input);
   return fetchMutation(api.projects.create, { input, ...strategy });
 }
@@ -190,7 +190,9 @@ export async function writeDrafts(id: ProjectId, contactId?: string) {
   ]);
   const targets = contacts.filter((c) => (contactId ? c._id === contactId : c.selected));
   if (!targets.length) throw new Error("Select at least one contact.");
-  const proofPoints = typeof project.input?.proofPoints === "string" ? project.input.proofPoints : "";
+  // Proof points the user typed plus those extracted from uploaded documents during strategy.
+  const typed = typeof project.input?.proofPoints === "string" ? project.input.proofPoints : "";
+  const proofPoints = [typed, ...profile.proofPoints].filter(Boolean).join("; ");
 
   const settled = await Promise.allSettled(targets.map(async (contact) => {
     const company = companies.find((c) => c._id === contact.companyId);
