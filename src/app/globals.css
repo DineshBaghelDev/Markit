@@ -5,44 +5,24 @@
 @custom-variant dark (&:is(.dark *));
 
 /* Markit design system, ported from context/Markit · your market copilot_updated.html.
+   The app is dark-only so every visitor sees the reviewed palette, whatever their OS setting.
    Tokens are unlayered; component rules sit in the components layer so Tailwind utilities can still override them. */
 :root{
   --night:#0B0B0B;--night-grain:#1C1C1C;--night-line:#262624;--night-line-strong:#3A3A37;
   --paper:#F2F1EC;--ash:#9A9A94;--ash-dim:#6E6E69;--lime:#C6F24E;
-  --bg:#F2F1EC;--bg-grain:#D9D8D1;--surface:#FAFAF7;--field:#FFFFFF;--border:#DDDCD5;
-  --text:#111111;--text-muted:#6B6B66;--text-quiet:#85857F;
-  --accent-mark:#8DB52A;--accent-wash:#EEF6D6;--alert:#B42318;--alert-wash:#FBE9E7;
-  --btn-bg:#111111;--btn-text:#F2F1EC;--overlay:rgba(17,17,17,.28);
   --sans:var(--font-geist),"Helvetica Neue",Arial,sans-serif;--mono:var(--font-geist-mono),ui-monospace,Menlo,monospace;--dot:var(--font-doto),var(--font-geist-mono),monospace;
   --ease:cubic-bezier(.2,.7,.2,1);
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
-  color-scheme:light;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0E0E0D;--bg-grain:#1F1F1D;--surface:#161615;--field:#1C1C1B;--border:#2A2A28;
-  --text:#F2F1EC;--text-muted:#9A9A94;--text-quiet:#6E6E69;--accent-mark:#C6F24E;--accent-wash:#232B12;
-  --alert:#FF8A7A;--alert-wash:#3A1612;--btn-bg:#F2F1EC;--btn-text:#0B0B0B;--overlay:rgba(0,0,0,.5);color-scheme:dark;}}
-:root[data-theme="dark"]{
   --bg:#0E0E0D;--bg-grain:#1F1F1D;--surface:#161615;--field:#1C1C1B;--border:#2A2A28;
   --text:#F2F1EC;--text-muted:#9A9A94;--text-quiet:#6E6E69;--accent-mark:#C6F24E;--accent-wash:#232B12;
   --alert:#FF8A7A;--alert-wash:#3A1612;--btn-bg:#F2F1EC;--btn-text:#0B0B0B;--overlay:rgba(0,0,0,.5);color-scheme:dark;}
 
 /* ---------- App tokens (status, score, gap) ---------- */
 :root{
-  --amber-wash:#FBEFD5;--amber-ink:#7A4A00;--amber-line:#E9C77E;
-  --good-wash:#E3F1D3;--good-ink:#2F5A0F;
-  --grey-wash:#ECEBE6;--grey-ink:#4A4A46;
-  --blue-wash:#E3ECF8;--blue-ink:#1D4E89;
-  --violet-wash:#EFE6F7;--violet-ink:#5B2E86;
-  --teal-wash:#DDF0EE;--teal-ink:#11594F;
-  --orange-wash:#FBE7D6;--orange-ink:#7A3300;
-  --hl:#FFF3B8;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --amber-wash:#3A2A0E;--amber-ink:#F5C97A;--amber-line:#6B4E1A;
   --good-wash:#1F2E12;--good-ink:#B9E07A;--grey-wash:#262624;--grey-ink:#C9C8C1;
   --blue-wash:#14243A;--blue-ink:#9EC3F2;--violet-wash:#2A1B3A;--violet-ink:#D2B4F0;
-  --teal-wash:#0F2B28;--teal-ink:#8ED8CC;--orange-wash:#3A2010;--orange-ink:#F6B98A;--hl:#4A4214;}}
+  --teal-wash:#0F2B28;--teal-ink:#8ED8CC;--orange-wash:#3A2010;--orange-ink:#F6B98A;--hl:#4A4214;}
 
 
 :root {
