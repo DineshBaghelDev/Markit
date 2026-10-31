@@ -65,6 +65,7 @@ export default function ProjectPage() {
   const drafts = useQuery(api.drafts.listByProject, { projectId });
   const convex = useConvex();
   const approveIcp = useMutation(api.projects.approveIcp);
+  const rename = useMutation(api.projects.rename);
   const setContactSelected = useMutation(api.contacts.setSelected);
   const router = useRouter();
   const task = useAgentTask();
@@ -121,10 +122,11 @@ export default function ProjectPage() {
   });
 
   const stage = STAGE_BY_STATUS[status];
-  const name = [profile?.companyName, input?.geography].filter(Boolean).join(", ") || "Project";
+  const name = project.name ?? ([profile?.companyName, input?.geography].filter(Boolean).join(", ") || "Project");
 
   return (
-    <AppShell projectName={name} steps={stepStates(project, companies, contacts, drafts)} current={step} onStep={go}>
+    <AppShell projectName={name} steps={stepStates(project, companies, contacts, drafts)} current={step} onStep={go}
+      onRename={async (v) => { await rename({ id: projectId, name: v }); toast("Project renamed"); }}>
       {status === "error" && project.error && <ErrorNote message={`Last run failed: ${project.error}`} />}
       {(serverRunning || status === "autopilot_done") && stage !== undefined && (
         <Banner kind={status === "autopilot_done" ? "ok" : "warn"}

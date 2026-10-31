@@ -29,11 +29,12 @@ const MAIL = (
 export const Icons = { check: CHECK, lock: LOCK, mail: MAIL };
 
 // Sidebar stepper + top bar, as in the updated prototype.
-export function AppShell({ projectName, steps, current, onStep, children }: {
+export function AppShell({ projectName, steps, current, onStep, onRename, children }: {
   projectName: string;
   steps: Record<Step, StepInfo>;
   current: Step;
   onStep?: (step: Step) => void;
+  onRename?: (name: string) => void;
   children: ReactNode;
 }) {
   const agent = useSyncExternalStore(agentStore.subscribe, agentStore.get, agentStore.get);
@@ -77,7 +78,14 @@ export function AppShell({ projectName, steps, current, onStep, children }: {
       </aside>
       <div className="mainwrap">
         <header className="topbar">
-          <span className="pname">{projectName}</span>
+          {onRename ? (
+            <>
+              <label className="sr" htmlFor="pname">Project name</label>
+              <input className="pname" id="pname" key={projectName} defaultValue={projectName} size={Math.max(12, projectName.length + 2)} title="Click to rename"
+                onBlur={(e) => { const v = e.currentTarget.value.trim(); if (v && v !== projectName) onRename(v); else e.currentTarget.value = projectName; }}
+                onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.currentTarget.value = projectName; e.currentTarget.blur(); } }} />
+            </>
+          ) : <span className="pname">{projectName}</span>}
           <div className="runline" aria-live="polite"><BloCanvas tone="mark" grid={18} expr={agent.expr} /><span>{agent.text}</span></div>
         </header>
         <main className="main">{children}</main>

@@ -3,6 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { businessInputSchema, type ParsedBusinessInput } from "@/lib/schemas";
+import { paceDemoStep } from "@/lib/server/demo-cache";
 import { readSellerDocuments } from "@/lib/server/documents";
 
 const errorResponse = (error: unknown) => {
@@ -16,8 +17,11 @@ export function jsonRoute<T>(schema: z.ZodType<T>, handler: (body: T) => Promise
   return async (request: Request) => {
     const parsed = schema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: z.prettifyError(parsed.error) }, { status: 400 });
+    const startedAt = Date.now();
     try {
-      return NextResponse.json((await handler(parsed.data)) ?? { ok: true });
+      const result = await handler(parsed.data);
+      await paceDemoStep(startedAt);
+      return NextResponse.json(result ?? { ok: true });
     } catch (error) {
       return errorResponse(error);
     }
@@ -47,7 +51,9 @@ export function businessInputRoute(handler: (input: ParsedBusinessInput, warning
     const parsed = businessInputSchema.safeParse(raw);
     if (!parsed.success) return NextResponse.json({ error: z.prettifyError(parsed.error) }, { status: 400 });
     try {
+      const startedAt = Date.now();
       const result = await handler(parsed.data, warnings);
+      await paceDemoStep(startedAt);
       return NextResponse.json({ ...(result as object), warnings });
     } catch (error) {
       return errorResponse(error);

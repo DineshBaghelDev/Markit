@@ -22,6 +22,11 @@ export const updateIcp = mutation({
   handler: (ctx, { id, icp }) => ctx.db.patch("projects", id, { icp, icpApproved: false }),
 });
 
+export const rename = mutation({
+  args: { id: v.id("projects"), name: v.string() },
+  handler: (ctx, { id, name }) => ctx.db.patch("projects", id, { name: name.trim() || undefined }),
+});
+
 // Profile corrections from the Business step. Later steps read the profile when they run.
 export const updateProfile = mutation({
   args: { id: v.id("projects"), profile: v.any() },

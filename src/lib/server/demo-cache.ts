@@ -10,6 +10,14 @@ const CACHE_DIR = path.join(process.cwd(), ".demo-cache");
 
 export const demoCacheEnabled = () => process.env.DEMO_CACHE === "on";
 
+// Demo pacing (DEMO_STEP_DELAY=on): a replayed step returns instantly, which hides the progress animation.
+// Pads each pipeline request to a random 5-8 s. Slower (live) requests are never delayed further.
+export async function paceDemoStep(startedAt: number) {
+  if (process.env.DEMO_STEP_DELAY !== "on") return;
+  const wait = 5_000 + Math.random() * 3_000 - (Date.now() - startedAt);
+  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+}
+
 export async function withDemoCache<T>(
   namespace: string,
   key: unknown,
@@ -23,8 +31,13 @@ export async function withDemoCache<T>(
     return { value: JSON.parse(await readFile(file, "utf8")).value as T, cached: true };
   } catch {
     const value = await fn();
-    await mkdir(path.dirname(file), { recursive: true });
-    await writeFile(file, JSON.stringify({ key, value, recordedAt: new Date().toISOString() }, null, 2));
+    // Recording is best-effort: read-only filesystems (e.g. Vercel) must not fail the request.
+    try {
+      await mkdir(path.dirname(file), { recursive: true });
+      await writeFile(file, JSON.stringify({ key, value, recordedAt: new Date().toISOString() }, null, 2));
+    } catch (error) {
+      console.warn(`[demo-cache] could not record ${namespace}:`, error instanceof Error ? error.message : error);
+    }
     return { value, cached: false };
   }
 }

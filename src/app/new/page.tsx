@@ -181,7 +181,7 @@ export default function NewProject() {
               <p className="muted small">No projects yet. Your first one appears here.</p>
             ) : projects.map((p) => (
               <Link key={p._id} href={`/project/${p._id}`} className="flex items-center justify-between gap-3 border-b border-[var(--border)] py-2.5 text-sm no-underline last:border-b-0 hover:bg-[var(--bg)]">
-                <span><strong className="font-medium">{p.profile?.companyName ?? "Untitled"}</strong> <span className="muted small">{p.input?.geography}</span></span>
+                <span><strong className="font-medium">{p.name ?? p.profile?.companyName ?? "Untitled"}</strong> <span className="muted small">{p.input?.geography}</span></span>
                 <span className={`status ${p.status === "error" ? "s-replied" : p.status.includes("done") || p.status === "prospects_ready" ? "s-approved" : "s-draft"}`}>{STATUS_TEXT[p.status] ?? p.status.replaceAll("_", " ")}</span>
               </Link>
             ))}

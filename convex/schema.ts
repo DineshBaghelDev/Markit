@@ -13,6 +13,8 @@ export default defineSchema({
     profile: v.any(),
     icp: v.any(),
     insights: v.any(),
+    // User-chosen project name; the UI falls back to "<company>, <geography>".
+    name: v.optional(v.string()),
     icpApproved: v.boolean(),
     status: v.string(),
     error: v.optional(v.string()),
