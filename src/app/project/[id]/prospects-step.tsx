@@ -84,6 +84,7 @@ export function ProspectsStep({ project, companies, contacts, busy, error, onGoS
       {head}
       <ErrorNote message={error} />
       <div className="reveal flex flex-col gap-4">
+        {busy === "contacts" && <Progress lines={PEOPLE_LINES} />}
         <Banner kind="ok" action={
           <details className="how"><summary>How we searched</summary><div className="code">{[
             "Crustdata Company Search",
@@ -160,7 +161,7 @@ export function ProspectsStep({ project, companies, contacts, busy, error, onGoS
           </table>
         </div>
 
-        {busy === "contacts" ? <Progress lines={PEOPLE_LINES} /> : contacts.length > 0 && (
+        {busy !== "contacts" && contacts.length > 0 && (
           <People companies={selected} contacts={people} busy={busy} onEnrich={onEnrich} />
         )}
       </div>

@@ -97,11 +97,14 @@ export default function ProjectPage() {
   const discover = () => { go("prospects"); task.run("discover", "Searching Crustdata", "Prospects ranked", call("/api/discover")); };
   const approveAndSearch = async () => { await approveIcp({ id: projectId }); toast("ICP approved"); discover(); };
   const findPeople = () => task.run("contacts", "Finding decision-makers", "Decision-makers found", async () => {
-    const result = await call("/api/contacts")();
+    scrollTo({ top: 0, behavior: "smooth" });
+    const result = await postJson<{ count: number; warnings?: string[] }>("/api/contacts", { projectId });
+    if (!result.count) toast("No suitable decision-makers found at the selected companies. Pick other companies or add a person manually.");
     // Include the best-ranked person per company by default; the user can skip or include others.
     const found = await convex.query(api.contacts.listByProject, { projectId });
     const first = found.filter((c, i) => found.findIndex((x) => x.companyId === c.companyId) === i);
     await Promise.all(first.map((c) => setContactSelected({ id: c._id, selected: true })));
+    if (result.count) requestAnimationFrame(() => document.getElementById("h-dm")?.scrollIntoView({ behavior: "smooth", block: "start" }));
     return result;
   });
   const draftAll = async () => { go("outreach"); await task.run("drafts", "Drafting emails", "Drafts ready for approval", call("/api/outreach")); };

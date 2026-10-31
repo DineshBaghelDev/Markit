@@ -37,9 +37,17 @@ export function CampaignStep({ companies, contacts, drafts, busy, onGoOutreach, 
   async function simulateSend(ids: Id<"drafts">[]) {
     setSimulating(true);
     agentStore.set({ running: true, expr: "thinking", text: "Sending your emails" });
-    for (const id of ids) {
-      await new Promise((r) => setTimeout(r, 900 + Math.random() * 700));
-      await markSent({ id, messageId: `simulated-${Date.now()}` });
+    try {
+      for (const id of ids) {
+        await new Promise((r) => setTimeout(r, 900 + Math.random() * 700));
+        await markSent({ id, messageId: `simulated-${Date.now()}` });
+      }
+    } catch (error) {
+      // Always release the agent, or every later button would be ignored.
+      agentStore.set({ running: false, expr: "surprised", text: "Something went wrong" });
+      setSimulating(false);
+      toast(error instanceof Error ? error.message : "Sending failed");
+      return;
     }
     agentStore.set({ running: false, expr: "proud", text: `${ids.length} emails sent` });
     setSimulating(false);

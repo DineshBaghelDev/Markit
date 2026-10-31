@@ -169,7 +169,8 @@ export function useAgentTask() {
   const [error, setError] = useState("");
   // Returns the route's result on success (null on failure) and surfaces any pipeline warnings as toasts.
   async function run<T>(name: string, status: string, doneText: string, fn: () => Promise<T>): Promise<T | null> {
-    if (agentStore.get().running) return null;
+    // Never ignore a click silently: say why nothing started.
+    if (busy || agentStore.get().running) { toast("Markit is still working on the previous step. Try again when it finishes."); return null; }
     setBusy(name);
     setError("");
     agentStore.set({ running: true, expr: "thinking", text: status });
@@ -180,7 +181,10 @@ export function useAgentTask() {
       agentStore.set({ running: false, expr: "happy", text: doneText });
       return result;
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message);
+      // The error note sits at the top of the step; the toast is visible wherever the user is.
+      toast(message);
       agentStore.set({ running: false, expr: "surprised", text: "Something went wrong" });
       return null;
     } finally {
