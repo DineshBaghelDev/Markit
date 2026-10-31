@@ -1,0 +1,75 @@
+import "server-only";
+
+import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { api } from "../../../convex/_generated/api";
+import type { Doc, Id } from "../../../convex/_generated/dataModel";
+import type { ParsedBusinessInput } from "@/lib/schemas";
+
+// Guided example: when the "Use example" input arrives unchanged, each step replays the matching result from a
+// completed template project stored in Convex (so it also works on Vercel), after a short pause that lets the
+// progress animation play. Any edited or new input runs the live pipeline.
+const TEMPLATE_ID = (process.env.DEMO_TEMPLATE_PROJECT_ID?.trim() || "jn76x1x28m1hgz9rtqw7tdg3xn8hasea") as Id<"projects">;
+
+export const demoPause = () => new Promise((resolve) => setTimeout(resolve, 5_000 + Math.random() * 3_000));
+
+export async function demoTemplateFor(input: ParsedBusinessInput) {
+  if (input.documents.length) return null;
+  const template = await fetchQuery(api.projects.get, { id: TEMPLATE_ID }).catch(() => null);
+  const t = template?.input as ParsedBusinessInput | undefined;
+  if (!template || !t) return null;
+  const same = (a?: string, b?: string) => (a ?? "").trim() === (b ?? "").trim();
+  return same(input.product, t.product) && same(input.companyName, t.companyName) && same(input.geography, t.geography) ? template : null;
+}
+
+export async function replayCompanies(project: Doc<"projects">) {
+  const companies = await fetchQuery(api.companies.listByProject, { projectId: project.demoOf! });
+  await fetchMutation(api.companies.replaceForProject, {
+    projectId: project._id,
+    companies: companies.map(({ crustdataId, name, domain, segment, data, score, qualification, source }) =>
+      ({ crustdataId, name, domain, segment, data, score, qualification, source })),
+  });
+  return companies.length;
+}
+
+export async function replayContacts(project: Doc<"projects">) {
+  const templateId = project.demoOf!;
+  const [mine, theirs, theirContacts] = await Promise.all([
+    fetchQuery(api.companies.listByProject, { projectId: project._id }),
+    fetchQuery(api.companies.listByProject, { projectId: templateId }),
+    fetchQuery(api.contacts.listByProject, { projectId: templateId }),
+  ]);
+  const selected = mine.filter((c) => c.selected);
+  if (!selected.length) throw new Error("Select at least one company.");
+  const contacts = selected.flatMap((company) => {
+    const twin = theirs.find((t) => t.crustdataId === company.crustdataId);
+    return theirContacts.filter((c) => c.companyId === twin?._id && c.source !== "manual").map((c) => ({
+      companyId: company._id, crustdataPersonId: c.crustdataPersonId, name: c.name, title: c.title,
+      profileUrl: c.profileUrl, emailStatus: "not_enriched" as const, relevance: c.relevance, source: c.source,
+    }));
+  });
+  await fetchMutation(api.contacts.replaceForProject, { projectId: project._id, contacts });
+  return contacts.length;
+}
+
+export async function replayDrafts(project: Doc<"projects">, contactId?: string) {
+  const templateId = project.demoOf!;
+  const [mine, theirContacts, theirDrafts] = await Promise.all([
+    fetchQuery(api.contacts.listByProject, { projectId: project._id }),
+    fetchQuery(api.contacts.listByProject, { projectId: templateId }),
+    fetchQuery(api.drafts.listByProject, { projectId: templateId }),
+  ]);
+  const targets = mine.filter((c) => (contactId ? c._id === contactId : c.selected));
+  if (!targets.length) throw new Error("Select at least one contact.");
+  let count = 0;
+  for (const contact of targets) {
+    const twin = theirContacts.find((c) => c.crustdataPersonId === contact.crustdataPersonId);
+    const draft = theirDrafts.find((d) => d.contactId === twin?._id);
+    if (!draft) continue;
+    await fetchMutation(api.drafts.upsert, {
+      projectId: project._id, contactId: contact._id, subject: draft.subject, body: draft.body,
+      cta: draft.cta, valueProposition: draft.valueProposition, citations: draft.citations ?? [],
+    });
+    count++;
+  }
+  return count;
+}

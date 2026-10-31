@@ -7,6 +7,7 @@ import { buildCompanyQueries, buildPeopleAtCompanyQuery, dedupeCompanies } from 
 import { parseStoredIcp, parseStoredProfile, type ParsedBusinessInput } from "@/lib/schemas";
 import { getPath, scoreQualification } from "@/lib/scoring";
 import { generateDraft, generateStrategy, pickDecisionMakers, qualifyCompanies } from "@/lib/server/ai";
+import { demoPause, demoTemplateFor, replayCompanies, replayContacts, replayDrafts } from "@/lib/server/demo-replay";
 import { DAILY_SEND_LIMIT, emailConfig, finalizeBody, isAllowedRecipient, sendEmail } from "@/lib/server/email";
 import {
   CrustdataError, companyAutocomplete, companySearch, enrichBusinessEmails, personSearch, type CrustdataCompany,
@@ -26,6 +27,12 @@ const setStatus = (id: ProjectId, status: string, error?: string) =>
 
 // Steps 1-3: business understanding, ICP and market insights in one model call.
 export async function createProject(input: ParsedBusinessInput): Promise<ProjectId> {
+  const template = await demoTemplateFor(input);
+  if (template) {
+    await demoPause();
+    const { input: tIn, profile, icp, insights } = template;
+    return fetchMutation(api.projects.create, { input: tIn, profile, icp, insights, demoOf: template._id });
+  }
   const strategy = await generateStrategy(input);
   return fetchMutation(api.projects.create, { input, ...strategy });
 }
@@ -53,6 +60,12 @@ export async function discoverProspects(id: ProjectId) {
   const { project, icp, profile } = await loadProject(id);
   if (!project.icpApproved) throw new Error("Approve the ICP before discovering companies.");
   await setStatus(id, "discovering");
+  if (project.demoOf) {
+    await demoPause();
+    const count = await replayCompanies(project);
+    await setStatus(id, "prospects_ready");
+    return { count, warnings: [] as string[] };
+  }
   const warnings: string[] = [];
 
   try {
@@ -119,7 +132,8 @@ export async function discoverProspects(id: ProjectId) {
 
 // Step 6: people at selected companies (target countries first) -> LLM picks those matching buyer roles.
 export async function findDecisionMakers(id: ProjectId) {
-  const { icp, profile } = await loadProject(id);
+  const { project, icp, profile } = await loadProject(id);
+  if (project.demoOf) { await demoPause(); return { count: await replayContacts(project), warnings: [] as string[] }; }
   const selected = (await fetchQuery(api.companies.listByProject, { projectId: id })).filter((c) => c.selected);
   if (!selected.length) throw new Error("Select at least one company.");
 
@@ -165,13 +179,15 @@ export async function findDecisionMakers(id: ProjectId) {
 
 // Enrichment is spent only on selected contacts. Permission errors mark emails unavailable instead of failing.
 export async function enrichSelectedContacts(id: ProjectId) {
+  const demo = (await fetchQuery(api.projects.get, { id }))?.demoOf;
+  if (demo) await demoPause();
   const contacts = (await fetchQuery(api.contacts.listByProject, { projectId: id }))
     .filter((c) => c.selected && c.emailStatus === "not_enriched");
   const urls = contacts.flatMap((c) => (c.profileUrl ? [c.profileUrl] : []));
   let emails = new Map<string, string>();
   let warning: string | undefined;
   try {
-    if (urls.length) emails = await enrichBusinessEmails(urls);
+    if (urls.length && !demo) emails = await enrichBusinessEmails(urls);
   } catch (error) {
     if (!(error instanceof CrustdataError) || error.status !== 403) throw error;
     warning = "Email enrichment is not available on the current Crustdata plan.";
@@ -185,6 +201,7 @@ export async function enrichSelectedContacts(id: ProjectId) {
 // Step 7: one draft per selected contact (or one contact when regenerating), with verified citations.
 export async function writeDrafts(id: ProjectId, contactId?: string) {
   const { project, icp, profile } = await loadProject(id);
+  if (project.demoOf) { await demoPause(); return { count: await replayDrafts(project, contactId), warnings: [] as string[] }; }
   const [companies, contacts] = await Promise.all([
     fetchQuery(api.companies.listByProject, { projectId: id }),
     fetchQuery(api.contacts.listByProject, { projectId: id }),

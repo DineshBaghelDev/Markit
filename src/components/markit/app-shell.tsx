@@ -29,8 +29,9 @@ const MAIL = (
 export const Icons = { check: CHECK, lock: LOCK, mail: MAIL };
 
 // Sidebar stepper + top bar, as in the updated prototype.
-export function AppShell({ projectName, steps, current, onStep, onRename, children }: {
+export function AppShell({ projectName, tag, steps, current, onStep, onRename, children }: {
   projectName: string;
+  tag?: string;
   steps: Record<Step, StepInfo>;
   current: Step;
   onStep?: (step: Step) => void;
@@ -42,7 +43,7 @@ export function AppShell({ projectName, steps, current, onStep, onRename, childr
     <div className="app">
       <aside className="side" aria-label="Project">
         <Link className="logo" href="/">markit<i>.</i></Link>
-        <div className="proj"><span className="label">Project</span><b>{projectName}</b></div>
+        <div className="proj"><span className="flex items-center justify-between gap-2"><span className="label">Project</span>{tag && <span className="status s-prepared">{tag}</span>}</span><b>{projectName}</b></div>
         <nav aria-label="Steps">
           <ol className="steps">
             {STEPS.map(([key, name], i) => {

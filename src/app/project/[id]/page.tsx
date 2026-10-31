@@ -125,7 +125,7 @@ export default function ProjectPage() {
   const name = project.name ?? ([profile?.companyName, input?.geography].filter(Boolean).join(", ") || "Project");
 
   return (
-    <AppShell projectName={name} steps={stepStates(project, companies, contacts, drafts)} current={step} onStep={go}
+    <AppShell projectName={name} tag={project.demoOf ? "Example" : undefined} steps={stepStates(project, companies, contacts, drafts)} current={step} onStep={go}
       onRename={async (v) => { await rename({ id: projectId, name: v }); toast("Project renamed"); }}>
       {status === "error" && project.error && <ErrorNote message={`Last run failed: ${project.error}`} />}
       {(serverRunning || status === "autopilot_done") && stage !== undefined && (

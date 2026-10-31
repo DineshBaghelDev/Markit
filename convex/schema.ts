@@ -15,6 +15,8 @@ export default defineSchema({
     insights: v.any(),
     // User-chosen project name; the UI falls back to "<company>, <geography>".
     name: v.optional(v.string()),
+    // Set for guided example runs: each step replays this completed project's results.
+    demoOf: v.optional(v.id("projects")),
     icpApproved: v.boolean(),
     status: v.string(),
     error: v.optional(v.string()),

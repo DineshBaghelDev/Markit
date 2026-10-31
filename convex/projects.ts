@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const create = mutation({
-  args: { input: v.any(), profile: v.any(), icp: v.any(), insights: v.any() },
+  args: { input: v.any(), profile: v.any(), icp: v.any(), insights: v.any(), demoOf: v.optional(v.id("projects")) },
   handler: (ctx, args) => ctx.db.insert("projects", { ...args, icpApproved: false, status: "strategy_ready" }),
 });
 
