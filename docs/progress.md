@@ -12,7 +12,7 @@ Updated: 2026-10-31
 
 ## Active
 
-- Recording the B2B SaaS scenario (AuditPilot, UK compliance automation).
+- None. Both demo scenarios are recorded: VoltGrid Storage (UAE BESS: 30 companies, 7 contacts, 4 drafts) and AuditPilot (UK compliance SaaS: 13 companies, 6 contacts, 2 drafts).
 
 ## Deferred
 
@@ -25,4 +25,4 @@ Updated: 2026-10-31
 
 ## Next action
 
-Finish the SaaS recording, click through both projects in the browser, and rehearse the demo with DEMO_CACHE=on.
+Click through both projects in the browser and rehearse the demo with codex-as-api running and DEMO_CACHE=on.

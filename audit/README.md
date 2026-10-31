@@ -37,3 +37,5 @@ Record checks actually performed, findings, and limitations here. Keep entries d
 - /person/contact/enrich returned HTTP 403 (permission_error) for the current key; no emails were stored or invented.
 - Crustdata usage in testing: about 2 + 30 company results, about 2 + 25 person results, plus autocomplete calls (cached).
 - Not yet done: browser click-through of the UI; Vercel deployment.
+- SaaS run (AuditPilot, UK): ICP edited to 50-1000 employees, then approved; 13 companies after dedupe (scores up to 81), 6 decision-makers at 3 selected companies, 2 drafts. ICP, roles and messaging differed clearly from the BESS run.
+- Page smoke check: /, and both /project/[id] pages returned HTTP 200. Interactive browser click-through not performed.
